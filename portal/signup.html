@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account — Centre for Media Literacy</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .strength-bar { display: flex; gap: 4px; margin-top: 6px; }
+    .strength-seg { height: 4px; flex: 1; border-radius: 2px; background: var(--border); transition: background var(--transition); }
+    .strength-seg.fill-1 { background: var(--red); }
+    .strength-seg.fill-2 { background: var(--accent); }
+    .strength-seg.fill-3 { background: var(--green); }
+  </style>
+</head>
+<body>
+<div class="auth-wrap">
+  <!-- Left -->
+  <div class="auth-left">
+    <div style="position:relative;z-index:1">
+      <a href="index.html" style="display:inline-flex;align-items:center;gap:12px;text-decoration:none;margin-bottom:40px">
+        <div style="width:44px;height:44px;background:rgba(200,146,42,0.2);border:1px solid rgba(200,146,42,0.3);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--accent-light);font-weight:900;font-size:15px">CML</div>
+        <div>
+          <div style="color:white;font-weight:700;font-size:14px;font-family:'Merriweather',serif">Centre for Media Literacy</div>
+          <div style="color:rgba(255,255,255,0.45);font-size:11px;text-transform:uppercase;letter-spacing:0.8px">Join Our Community</div>
+        </div>
+      </a>
+      <h2 style="color:white;font-size:2rem;margin-bottom:14px;font-family:'Merriweather',serif;line-height:1.3">Join CML<br>Today</h2>
+      <p style="color:rgba(255,255,255,0.6);font-size:14px;line-height:1.7;margin-bottom:28px">Create your free membership account and access our full suite of training programmes, research resources, and media literacy tools.</p>
+      <div style="background:rgba(200,146,42,0.12);border:1px solid rgba(200,146,42,0.25);border-radius:12px;padding:16px">
+        <div style="font-weight:700;color:var(--accent-light);margin-bottom:8px;font-size:14px">Your CML Member ID</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.65);line-height:1.6">Your unique ID (e.g. <code style="color:var(--accent-light)">CML-MBR-001</code>) is auto-generated after registration. Use it to sign in.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right -->
+  <div class="auth-right">
+    <div class="auth-card" style="max-width:500px">
+      <div class="auth-logo">CML</div>
+      <h1 class="auth-title">Create Account</h1>
+      <p class="auth-subtitle">Join Centre for Media Literacy — it's free.</p>
+
+      <form id="signup-form">
+        <!-- Step 1 -->
+        <div id="step-1">
+          <div class="form-group">
+            <label class="form-label">Full Name *</label>
+            <input type="text" id="su-name" class="form-input" placeholder="Your full name" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email Address *</label>
+            <input type="email" id="su-email" class="form-input" placeholder="name@example.com" required>
+            <div class="form-error" id="email-err">This email is already registered.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Phone Number</label>
+            <input type="tel" id="su-phone" class="form-input" placeholder="+880 1XXX-XXXXXX">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Membership Role *</label>
+            <select id="su-role" class="form-select" required>
+              <option value="">— Select your role —</option>
+              <option value="member">Member</option>
+              <option value="advisor">Advisor</option>
+            </select>
+            <div class="form-hint">Admin & Director accounts are created by existing administrators.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Designation / Title</label>
+            <input type="text" id="su-designation" class="form-input" placeholder="e.g. Journalist, Researcher, Student">
+          </div>
+          <button type="button" class="btn btn-primary btn-full" style="height:48px;font-size:15px" onclick="goStep2()">Continue →</button>
+        </div>
+
+        <!-- Step 2 -->
+        <div id="step-2" style="display:none">
+          <div style="background:var(--bg-section);border-radius:10px;padding:14px;margin-bottom:20px">
+            <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;color:var(--text-muted);margin-bottom:6px">Your Generated Member ID</div>
+            <div id="generated-id" style="font-size:22px;font-weight:900;font-family:monospace;color:var(--primary)"></div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Save this ID — you'll need it to sign in.</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Set Password *</label>
+            <div class="input-wrap">
+              <input type="password" id="su-pwd" class="form-input" placeholder="Create a strong password" required minlength="6" oninput="checkStrength(this.value)">
+              <button type="button" class="input-action" onclick="togglePwd('su-pwd', this)">👁</button>
+            </div>
+            <div class="strength-bar">
+              <div class="strength-seg" id="str-1"></div>
+              <div class="strength-seg" id="str-2"></div>
+              <div class="strength-seg" id="str-3"></div>
+            </div>
+            <div class="form-hint" id="str-label">Minimum 6 characters</div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Confirm Password *</label>
+            <input type="password" id="su-pwd2" class="form-input" placeholder="Repeat your password" required>
+            <div class="form-error" id="pwd-err">Passwords do not match.</div>
+          </div>
+
+          <div id="signup-error" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;font-size:13px;color:var(--red);margin-bottom:16px"></div>
+
+          <div class="flex gap-10">
+            <button type="button" class="btn btn-ghost" onclick="document.getElementById('step-1').style.display='';document.getElementById('step-2').style.display='none'">← Back</button>
+            <button type="submit" class="btn btn-primary btn-full" id="signup-btn" style="height:44px">Create Account</button>
+          </div>
+        </div>
+      </form>
+
+      <!-- Success -->
+      <div id="signup-success" style="display:none;text-align:center">
+        <div style="font-size:56px;margin-bottom:16px">🎉</div>
+        <h3 style="margin-bottom:6px">Account Created!</h3>
+        <p style="color:var(--text-muted);margin-bottom:4px;font-size:14px">Your Member ID is:</p>
+        <div id="success-id" style="font-size:24px;font-weight:900;font-family:monospace;color:var(--primary);margin-bottom:20px"></div>
+        <a href="login.html" class="btn btn-primary btn-full btn-lg">Sign In Now →</a>
+      </div>
+
+      <div class="auth-footer">Already a member? <a href="login.html" style="font-weight:700;color:var(--primary)">Sign In</a></div>
+    </div>
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+  let previewId = '';
+  document.addEventListener('DOMContentLoaded', () => {
+    if (DB.getCurrentUser()) { window.location.href = 'dashboard.html'; }
+    // Update preview ID as role changes
+    document.getElementById('su-role').addEventListener('change', function() {
+      if (this.value) previewId = DB.generateId(this.value);
+    });
+  });
+
+  function goStep2() {
+    const name  = document.getElementById('su-name').value.trim();
+    const email = document.getElementById('su-email').value.trim();
+    const role  = document.getElementById('su-role').value;
+    const emailErr = document.getElementById('email-err');
+
+    if (!name || !email || !role) { App.showToast('Please fill all required fields.', 'error'); return; }
+    if (DB.isEmailTaken(email)) { emailErr.classList.add('show'); return; }
+    emailErr.classList.remove('show');
+
+    previewId = DB.generateId(role);
+    document.getElementById('generated-id').textContent = previewId;
+    document.getElementById('step-1').style.display = 'none';
+    document.getElementById('step-2').style.display  = '';
+  }
+
+  function checkStrength(val) {
+    let s = 0;
+    if (val.length >= 6) s++;
+    if (/[A-Z]/.test(val) || /[0-9]/.test(val)) s++;
+    if (/[!@#$%^&*]/.test(val) || val.length >= 10) s++;
+    ['str-1','str-2','str-3'].forEach((id,i) => {
+      const el = document.getElementById(id);
+      el.className = 'strength-seg';
+      if (i < s) el.classList.add(`fill-${Math.min(s,3)}`);
+    });
+    const lbl = document.getElementById('str-label');
+    lbl.textContent = ['Enter at least 6 characters','Password is fair','Password is good','Password is strong'][s];
+    lbl.style.color = [,'var(--red)','var(--accent)','var(--green)'][s] || 'var(--text-muted)';
+  }
+
+  function togglePwd(id, btn) {
+    const inp = document.getElementById(id);
+    inp.type  = inp.type === 'password' ? 'text' : 'password';
+  }
+
+  document.getElementById('signup-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const pwd  = document.getElementById('su-pwd').value;
+    const pwd2 = document.getElementById('su-pwd2').value;
+    const pwdErr = document.getElementById('pwd-err');
+    const errBox = document.getElementById('signup-error');
+    const btn    = document.getElementById('signup-btn');
+
+    if (pwd !== pwd2) { pwdErr.classList.add('show'); return; }
+    pwdErr.classList.remove('show');
+
+    btn.innerHTML = '<div class="spinner"></div> Creating…';
+    btn.disabled  = true;
+
+    setTimeout(() => {
+      const role  = document.getElementById('su-role').value;
+      const email = document.getElementById('su-email').value.trim();
+      if (DB.isEmailTaken(email)) {
+        errBox.textContent = 'This email is already registered.';
+        errBox.style.display = 'block';
+        btn.innerHTML = 'Create Account'; btn.disabled = false;
+        return;
+      }
+      const user = {
+        id:          previewId,
+        name:        document.getElementById('su-name').value.trim(),
+        email,
+        phone:       document.getElementById('su-phone').value.trim(),
+        role,
+        password:    pwd,
+        designation: document.getElementById('su-designation').value.trim() || null,
+        photo: null, bio: null, department: null,
+        joinDate:    new Date().toISOString().split('T')[0],
+        customPermissions: [],
+        createdAt:   new Date().toISOString()
+      };
+      DB.saveUser(user);
+      document.getElementById('signup-form').style.display  = 'none';
+      document.getElementById('signup-success').style.display = '';
+      document.getElementById('success-id').textContent = previewId;
+    }, 800);
+  });
+</script>
+</body>
+</html>

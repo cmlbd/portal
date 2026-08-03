@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Course Certificate — Centre for Media Literacy</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    body { background: #f1f5f9; min-height: 100vh; display: flex; flex-direction: column; }
+    
+    .cert-actions {
+      background: white;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    /* Certificate Layout */
+    .cert-container {
+      max-width: 900px;
+      margin: 30px auto;
+      background: #ffffff;
+      padding: 50px 60px;
+      border-radius: 12px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.12);
+      position: relative;
+      border: 12px solid #1e3a8a;
+      outline: 3px solid #c8922a;
+      outline-offset: -8px;
+      overflow: hidden;
+    }
+
+    .cert-corner-tl { position: absolute; top: 15px; left: 15px; font-size: 24px; color: #c8922a; }
+    .cert-corner-tr { position: absolute; top: 15px; right: 15px; font-size: 24px; color: #c8922a; }
+    .cert-corner-bl { position: absolute; bottom: 15px; left: 15px; font-size: 24px; color: #c8922a; }
+    .cert-corner-br { position: absolute; bottom: 15px; right: 15px; font-size: 24px; color: #c8922a; }
+
+    .cert-header { text-align: center; margin-bottom: 30px; }
+    .cert-logo { width: 70px; height: 70px; background: #0a2342; color: #c8922a; border-radius: 14px; font-size: 28px; font-weight: 900; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 12px; border: 2px solid #c8922a; }
+    .cert-org { font-family: 'Merriweather', serif; font-size: 24px; font-weight: 900; color: #0a2342; letter-spacing: 0.5px; }
+    .cert-sub { font-size: 12px; text-transform: uppercase; letter-spacing: 2px; color: #64748b; font-weight: 700; margin-top: 4px; }
+
+    .cert-text-sm { text-align: center; font-size: 15px; color: #475569; font-style: italic; }
+
+    .cert-name { font-family: 'Merriweather', serif; font-size: 34px; font-weight: 900; color: #0f172a; text-align: center; margin: 16px 0; border-bottom: 2px dashed #c8922a; padding-bottom: 8px; display: inline-block; }
+    
+    .cert-course { font-family: 'Merriweather', serif; font-size: 22px; font-weight: 700; color: #1e3a8a; text-align: center; margin: 12px 0 24px; }
+
+    .cert-footer { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 50px; padding-top: 20px; }
+    .cert-seal { width: 100px; height: 100px; border-radius: 50%; background: radial-gradient(circle, #c8922a 0%, #a27118 100%); color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; font-size: 10px; font-weight: 800; border: 4px solid #fff; box-shadow: 0 6px 16px rgba(0,0,0,0.2); }
+
+    .cert-sig-box { text-align: center; width: 200px; }
+    .cert-sig-line { border-top: 2px solid #0f172a; margin-top: 10px; padding-top: 6px; font-size: 13px; font-weight: 700; color: #0f172a; }
+
+    /* Print Protection */
+    @media print {
+      body.locked-cert * { display: none !important; }
+      body.locked-cert::after {
+        content: '🔒 Certificate printing locked. Complete all tasks and written exam first.';
+        display: block !important;
+        font-size: 20px;
+        padding: 50px;
+        text-align: center;
+      }
+      .cert-actions { display: none !important; }
+      body.unlocked-cert { background: white !important; }
+      body.unlocked-cert .cert-container { margin: 0 !important; box-shadow: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="cert-actions">
+  <a href="canva-assignment.html" class="btn btn-ghost btn-sm">← Back to Canva Tasks</a>
+  <div style="font-weight:700;font-size:14px;color:var(--text-dark)" id="nav-cert-status">CML Course Certificate</div>
+  <div>
+    <button id="print-btn" class="btn btn-primary btn-sm" onclick="doPrint()" style="display:none">🖨️ Print / Download Official Certificate</button>
+    <button id="print-disabled-btn" class="btn btn-ghost btn-sm" disabled style="opacity:0.6;cursor:not-allowed">
+      🔒 Download Locked
+    </button>
+  </div>
+</div>
+
+<div class="container" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 16px">
+
+  <!-- Locked Card (Shows when tasks/exam are not completed) -->
+  <div id="locked-card" style="display:none;max-width:550px;background:white;border-radius:16px;padding:40px;text-align:center;box-shadow:var(--shadow-lg);border:1px solid var(--border)">
+    <div style="font-size:64px;margin-bottom:16px">🔒</div>
+    <h2 style="font-size:22px;color:var(--text-dark);margin-bottom:10px;font-family:'Merriweather',serif">Official Certificate Locked</h2>
+    <p id="locked-reason" style="color:var(--text-muted);font-size:14px;line-height:1.6;margin-bottom:24px">
+      আপনার কোর্স সার্টিফিকেটটি লক্ করা আছে। সার্টিফিকেট পেতে অবশ্যই ১৫টি অ্যাসাইনমেন্ট জমা দিতে হবে এবং লিখিত পরীক্ষায় পাশ করতে হবে।
+    </p>
+
+    <div style="background:var(--bg-section);border-radius:10px;padding:18px;text-align:left;margin-bottom:24px">
+      <div style="font-weight:700;font-size:14px;color:var(--text-dark);margin-bottom:10px">কোর্স সমাপ্তির বিবরণী (Progress Tracker):</div>
+      <div id="check-tasks" style="font-size:13px;margin-bottom:8px;display:flex;align-items:center;gap:8px"></div>
+      <div id="check-exam" style="font-size:13px;display:flex;align-items:center;gap:8px"></div>
+    </div>
+
+    <a href="canva-assignment.html" class="btn btn-primary btn-full btn-lg">Go to Canva Tasks & Submit →</a>
+  </div>
+
+  <!-- Certificate Box (ONLY shown when eligible or for Director General) -->
+  <div class="cert-container" id="cert-box" style="display:none">
+    <div class="cert-corner-tl">❖</div>
+    <div class="cert-corner-tr">❖</div>
+    <div class="cert-corner-bl">❖</div>
+    <div class="cert-corner-br">❖</div>
+
+    <div class="cert-header">
+      <div class="cert-logo">CML</div>
+      <div class="cert-org">CENTRE FOR MEDIA LITERACY</div>
+      <div class="cert-sub">DHAKA, BANGLADESH · EST. 2024</div>
+    </div>
+
+    <div class="cert-text-sm">This is to certify that</div>
+
+    <div style="text-align:center">
+      <div class="cert-name" id="c-user-name">Loading Student Name...</div>
+    </div>
+
+    <div class="cert-text-sm">has successfully completed all assignments and written examinations for</div>
+
+    <div class="cert-course" id="c-course-title">ADVANCED CANVA DESIGNING — PART 1</div>
+
+    <div class="cert-text-sm" style="font-size:13px;max-width:600px;margin:0 auto 30px">
+      Demonstrating outstanding skills in news card design, graphic layout recreation, visual typography, and digital media publishing techniques.
+    </div>
+
+    <div class="cert-footer">
+      <div>
+        <div style="font-size:12px;color:#64748b"><strong>Certificate ID:</strong> <span id="c-cert-id">CML-CERT-2026-0001</span></div>
+        <div style="font-size:12px;color:#64748b"><strong>Issue Date:</strong> <span id="c-issue-date">August 2026</span></div>
+        <div style="font-size:12px;color:#64748b"><strong>Status / Grade:</strong> <span id="c-grade" style="font-weight:700;color:var(--green)">A+ (Passed)</span></div>
+      </div>
+
+      <div class="cert-seal">
+        <div style="font-size:20px;margin-bottom:2px">⭐</div>
+        <div>CML OFFICIAL</div>
+        <div>SEAL</div>
+      </div>
+
+      <div class="cert-sig-box">
+        <div style="font-family:'Brush Script MT', cursive, sans-serif;font-size:28px;color:#0a2342;line-height:1">Director General</div>
+        <div class="cert-sig-line">
+          Director General<br>
+          <span style="font-size:11px;color:#64748b;font-weight:400">Centre for Media Literacy</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+  let isEligible = false;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    const currentUser = DB.getCurrentUser();
+    if (!currentUser) {
+      window.location.href = 'login.html';
+      return;
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const targetUserId = params.get('uid') || currentUser.id;
+    const courseId = params.get('cid') || 'CML-CRS-001';
+
+    const user = DB.getUserById(targetUserId);
+    const course = DB.getCourseById(courseId) || DB.getCourses()[0];
+
+    const check = DB.checkEligibility(targetUserId, courseId);
+    isEligible = check.eligible;
+
+    if (!isEligible) {
+      // STRICT LOCK: Completely hide certificate & prevent printing!
+      document.body.className = 'locked-cert';
+      document.getElementById('locked-card').style.display = 'block';
+      document.getElementById('cert-box').style.display = 'none';
+      document.getElementById('print-btn').style.display = 'none';
+      document.getElementById('print-disabled-btn').style.display = 'inline-block';
+      document.getElementById('nav-cert-status').textContent = '🔒 Certificate Status: Locked';
+
+      document.getElementById('check-tasks').innerHTML = check.allTasksSubmitted 
+        ? `<span style="color:var(--green);font-weight:700">✓</span> All 15 assignments submitted`
+        : `<span style="color:var(--red);font-weight:700">✗</span> Assignments submitted: ${check.submittedTasks}/${check.totalTasks} (Remaining: ${check.missingCount})`;
+      
+      document.getElementById('check-exam').innerHTML = check.examPassed
+        ? `<span style="color:var(--green);font-weight:700">✓</span> Written exam passed / approved`
+        : `<span style="color:var(--red);font-weight:700">✗</span> Written exam pending (Held after 20th August)`;
+
+      // Block window.print when locked
+      window.print = function() {
+        alert("🔒 Certificate is locked! You must complete all 15 tasks and pass the written exam first.");
+      };
+
+      return;
+    }
+
+    // ELIGIBLE: Unlocked Official Certificate!
+    document.body.className = 'unlocked-cert';
+    document.getElementById('locked-card').style.display = 'none';
+    document.getElementById('cert-box').style.display = 'block';
+    document.getElementById('print-btn').style.display = 'inline-block';
+    document.getElementById('print-disabled-btn').style.display = 'none';
+    document.getElementById('nav-cert-status').textContent = '✅ Official CML Certificate (Unlocked)';
+
+    const cert = DB.issueCertificate(user.id, course.id, 'A+');
+
+    document.getElementById('c-user-name').textContent = user.name;
+    document.getElementById('c-course-title').textContent = course.title.toUpperCase();
+    document.getElementById('c-cert-id').textContent = cert.id;
+    document.getElementById('c-issue-date').textContent = App.formatDate(cert.issuedAt);
+    document.getElementById('c-grade').innerHTML = `<span style="color:var(--green)">A+ (Passed)</span>`;
+  });
+
+  function doPrint() {
+    if (!isEligible) {
+      alert("🔒 Certificate is locked! You must complete all 15 tasks and pass the written exam first.");
+      return;
+    }
+    window.print();
+  }
+</script>
+</body>
+</html>

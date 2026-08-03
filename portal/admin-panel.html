@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel — Centre for Media Literacy</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div id="sidebar-overlay" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:400"></div>
+<aside class="sidebar" id="sidebar">
+  <a href="index.html" class="sidebar-brand">
+    <div class="sidebar-logo">CML</div>
+    <div><div class="sidebar-brand-name">Centre for Media Literacy</div><div class="sidebar-brand-sub">Member Portal</div></div>
+  </a>
+  <nav class="sidebar-nav">
+    <div class="sidebar-section-label">Main</div>
+    <a href="dashboard.html" class="sidebar-link"><span class="sidebar-icon">🏠</span> Dashboard</a>
+    <a href="profile.html" class="sidebar-link"><span class="sidebar-icon">👤</span> My Profile</a>
+    <a href="courses.html" class="sidebar-link"><span class="sidebar-icon">🎓</span> Courses</a>
+    <a href="assignments.html" class="sidebar-link"><span class="sidebar-icon">📝</span> Assignments</a>
+    <a href="organogram.html" class="sidebar-link"><span class="sidebar-icon">🏢</span> Our Team</a>
+    <div class="sidebar-section-label">Administration</div>
+    <a href="admin-panel.html" class="sidebar-link active"><span class="sidebar-icon">🛡</span> Admin Panel</a>
+  </nav>
+  <div class="sidebar-footer">
+    <button class="sidebar-link btn btn-danger btn-sm btn-full" onclick="Auth.logout()"><span class="sidebar-icon">🚪</span> Sign Out</button>
+  </div>
+</aside>
+
+<div class="dash-main">
+  <div class="dash-topbar">
+    <div class="flex items-center gap-12">
+      <button id="sidebar-toggle" class="nav-mobile-toggle" style="display:flex">☰</button>
+      <div style="font-weight:700;font-size:14px;color:var(--text-dark)">Admin Panel</div>
+    </div>
+  </div>
+
+  <div class="dash-content">
+    <div class="page-header">
+      <div class="page-header-left">
+        <div class="page-header-eyebrow">Administration</div>
+        <div class="page-header-title">Admin Panel</div>
+        <div class="page-header-desc">Manage members, roles, and system permissions.</div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid-4 mb-24">
+      <div class="stat-card anim-up d1"><div class="stat-icon stat-icon-accent">👑</div><div><div class="stat-num" id="cnt-director">0</div><div class="stat-label">Directors</div></div></div>
+      <div class="stat-card anim-up d2"><div class="stat-icon stat-icon-primary">🛡</div><div><div class="stat-num" id="cnt-admin">0</div><div class="stat-label">Admins</div></div></div>
+      <div class="stat-card anim-up d3"><div class="stat-icon" style="background:rgba(14,116,144,0.1)">💡</div><div><div class="stat-num" id="cnt-advisor">0</div><div class="stat-label">Advisors</div></div></div>
+      <div class="stat-card anim-up d4"><div class="stat-icon stat-icon-green">👤</div><div><div class="stat-num" id="cnt-member">0</div><div class="stat-label">Members</div></div></div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="card anim-up">
+      <div style="padding:20px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+        <h3 style="font-size:16px;font-weight:700">👥 All Users</h3>
+        <div class="flex gap-10 flex-wrap">
+          <input type="text" id="search-q" class="form-input" placeholder="Search…" style="width:180px;padding:8px 12px" oninput="renderTable()">
+          <select id="role-q" class="form-select" style="width:130px;padding:8px 12px" onchange="renderTable()">
+            <option value="">All Roles</option>
+            <option value="director">Director</option>
+            <option value="admin">Admin</option>
+            <option value="advisor">Advisor</option>
+            <option value="member">Member</option>
+          </select>
+        </div>
+      </div>
+      <div class="table-wrapper" style="border:none;border-radius:0">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Member</th><th>ID</th><th>Role</th><th>Email</th><th>Joined</th><th>Permissions</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="users-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Permission Modal -->
+<div class="modal-overlay" id="perm-modal">
+  <div class="modal" style="max-width:540px">
+    <button class="modal-close" onclick="App.closeModal('perm-modal')">✕</button>
+    <h2 class="modal-title">🔑 Manage Permissions</h2>
+    <div id="perm-user-preview" style="padding:14px;background:var(--bg-section);border-radius:10px;margin-bottom:20px"></div>
+    <div class="form-group">
+      <label class="form-label">Role</label>
+      <select id="perm-role" class="form-select">
+        <option value="member">Member</option>
+        <option value="advisor">Advisor</option>
+        <option value="admin">Admin</option>
+        <option value="director">Director</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Extra Permissions</label>
+      <div id="perm-checks" style="display:flex;flex-direction:column;gap:10px;max-height:220px;overflow-y:auto;padding:4px 0"></div>
+    </div>
+    <input type="hidden" id="perm-uid">
+    <div class="flex gap-10 mt-16">
+      <button class="btn btn-primary btn-full" onclick="savePerms()">Save</button>
+      <button class="btn btn-ghost btn-full" onclick="App.closeModal('perm-modal')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- View User Modal -->
+<div class="modal-overlay" id="view-user-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="App.closeModal('view-user-modal')">✕</button>
+    <div id="view-user-content"></div>
+  </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script>
+  let currentUser;
+  document.addEventListener('DOMContentLoaded', () => {
+    currentUser = Auth.requireAuth();
+    if (!currentUser) return;
+    currentUser = DB.getUserById(currentUser.id);
+    if (!Auth.hasPermission(currentUser,'view_admin_panel')) { window.location.href='dashboard.html'; return; }
+    renderStats(); renderTable();
+  });
+
+  function renderStats() {
+    const users = DB.getUsers();
+    ['director','admin','advisor','member'].forEach(r => {
+      const el = document.getElementById('cnt-'+r);
+      if (el) el.textContent = users.filter(u=>u.role===r).length;
+    });
+  }
+
+  function renderTable() {
+    const tbody = document.getElementById('users-tbody');
+    const q     = document.getElementById('search-q').value.toLowerCase();
+    const rf    = document.getElementById('role-q').value;
+    let users   = DB.getUsers();
+    if (q)  users = users.filter(u => u.name.toLowerCase().includes(q) || u.id.toLowerCase().includes(q));
+    if (rf) users = users.filter(u => u.role === rf);
+    if (!users.length) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted)">No users found.</td></tr>`;
+      return;
+    }
+    const canPerm = Auth.hasPermission(currentUser,'grant_permissions');
+    const canDel  = currentUser.role === 'director' || Auth.hasPermission(currentUser,'manage_members');
+    tbody.innerHTML = users.map(u => {
+      const perms = Auth.getEffectivePermissions(u);
+      const isSelf = u.id === currentUser.id;
+      return `<tr>
+        <td>
+          <div class="flex items-center gap-10">
+            ${App.avatarHtml(u,'sm')}
+            <div><strong style="font-size:14px">${u.name}</strong><div style="font-size:11px;color:var(--text-muted)">${u.designation||''}</div></div>
+          </div>
+        </td>
+        <td><code style="font-size:12px">${u.id}</code></td>
+        <td>${App.getRoleBadge(u.role)}</td>
+        <td style="font-size:13px">${u.email||'—'}</td>
+        <td style="font-size:12px;color:var(--text-muted)">${App.formatDate(u.joinDate)}</td>
+        <td><span style="font-size:12px;color:var(--text-muted)">${perms.includes('all')?'⭐ Full access':perms.length+' perms'}</span></td>
+        <td>
+          <div class="flex gap-6">
+            <button class="btn btn-ghost btn-sm btn-icon" onclick="viewUser('${u.id}')" title="View">👁</button>
+            ${canPerm&&!isSelf?`<button class="btn btn-outline btn-sm btn-icon" onclick="openPerms('${u.id}')" title="Permissions">🔑</button>`:''}
+            ${canDel&&!isSelf&&u.role!=='director'?`<button class="btn btn-danger btn-sm btn-icon" onclick="delUser('${u.id}')" title="Delete">🗑</button>`:''}
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  function openPerms(uid) {
+    const u = DB.getUserById(uid);
+    document.getElementById('perm-uid').value  = uid;
+    document.getElementById('perm-role').value = u.role;
+    document.getElementById('perm-user-preview').innerHTML = `
+      <div class="flex items-center gap-12">
+        ${App.avatarHtml(u,'sm')}
+        <div>
+          <div style="font-weight:700">${u.name}</div>
+          <div style="font-size:12px;color:var(--text-muted)">${u.id}</div>
+        </div>
+        ${App.getRoleBadge(u.role)}
+      </div>`;
+    const custom = u.customPermissions||[];
+    document.getElementById('perm-checks').innerHTML = Object.entries(PERMISSIONS).map(([k,v]) => `
+      <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-size:14px;color:var(--text-body)">
+        <input type="checkbox" class="perm-chk" value="${k}" ${custom.includes(k)?'checked':''}
+          style="width:16px;height:16px;accent-color:var(--accent)">
+        ${v}
+      </label>`).join('');
+    App.openModal('perm-modal');
+  }
+
+  function savePerms() {
+    const uid = document.getElementById('perm-uid').value;
+    const u   = DB.getUserById(uid);
+    u.role    = document.getElementById('perm-role').value;
+    u.customPermissions = Array.from(document.querySelectorAll('.perm-chk:checked')).map(c=>c.value);
+    DB.saveUser(u);
+    App.closeModal('perm-modal');
+    renderStats(); renderTable();
+    App.showToast(`Permissions updated for ${u.name}.`,'success');
+  }
+
+  function viewUser(uid) {
+    const u = DB.getUserById(uid);
+    const enrolls  = DB.getEnrollmentsByUser(uid).length;
+    const asns     = DB.getAssignmentsForUser(uid).length;
+    const subCount = DB.getAssignmentsForUser(uid).filter(a=>DB.getUserSubmission(a.id,uid)).length;
+    const perms    = Auth.getEffectivePermissions(u);
+    document.getElementById('view-user-content').innerHTML = `
+      <div style="text-align:center;margin-bottom:24px">
+        ${App.avatarHtml(u,'lg')}
+        <h3 style="margin-top:14px;margin-bottom:4px">${u.name}</h3>
+        <div style="color:var(--accent);font-weight:600;margin-bottom:10px">${u.designation||u.role}</div>
+        ${App.getRoleBadge(u.role)}
+        <div style="font-family:monospace;font-size:13px;color:var(--text-muted);margin-top:8px">${u.id}</div>
+      </div>
+      <div class="grid-2 gap-10 mb-18" style="gap:10px">
+        <div style="padding:14px;background:var(--bg-section);border-radius:10px;text-align:center"><div style="font-size:22px;font-weight:800;color:var(--primary)">${enrolls}</div><div style="font-size:12px;color:var(--text-muted)">Courses</div></div>
+        <div style="padding:14px;background:var(--bg-section);border-radius:10px;text-align:center"><div style="font-size:22px;font-weight:800;color:var(--green)">${subCount}/${asns}</div><div style="font-size:12px;color:var(--text-muted)">Submitted</div></div>
+      </div>
+      <div class="info-row"><div class="info-label">Email</div><div class="info-value">${u.email||'—'}</div></div>
+      <div class="info-row"><div class="info-label">Phone</div><div class="info-value">${u.phone||'—'}</div></div>
+      <div class="info-row"><div class="info-label">Joined</div><div class="info-value">${App.formatDate(u.joinDate)}</div></div>
+      ${u.bio?`<div class="info-row"><div class="info-label">Bio</div><div class="info-value">${u.bio}</div></div>`:''}
+      <div style="margin-top:16px"><div class="form-label mb-8">Permissions</div><div style="display:flex;flex-wrap:wrap;gap:6px">${perms.map(p=>`<span class="perm-tag ${p==='all'?'all':''}">${p==='all'?'⭐ ':''} ${PERMISSIONS[p]||p}</span>`).join('')}</div></div>
+    `;
+    App.openModal('view-user-modal');
+  }
+
+  function delUser(uid) {
+    const u = DB.getUserById(uid);
+    App.confirm(`Delete <strong>${u.name}</strong>'s account permanently?`, () => {
+      DB.deleteUser(uid);
+      renderStats(); renderTable();
+      App.showToast(`${u.name} removed.`,'info');
+    });
+  }
+</script>
+</body>
+</html>

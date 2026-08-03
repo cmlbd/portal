@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Centre for Media Literacy</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- MAIN CONTENT -->
+<div class="dash-main" id="dash-main-content">
+  <!-- Topbar is injected by Layout.initDashboard() -->
+
+  <!-- Content -->
+  <div class="dash-content">
+    <!-- Page header -->
+    <div class="page-header">
+      <div class="page-header-left">
+        <div class="page-header-eyebrow">Member Portal</div>
+        <div class="page-header-title" id="dash-title">Dashboard</div>
+        <div class="page-header-desc">Your activity, courses, and assignments at a glance.</div>
+      </div>
+      <a href="courses.html" class="btn btn-primary btn-sm">Browse Courses →</a>
+    </div>
+
+    <!-- Stats -->
+    <div class="grid-4 mb-24">
+      <div class="stat-card anim-up d1">
+        <div class="stat-icon stat-icon-primary">🎓</div>
+        <div>
+          <div class="stat-num" id="stat-enrolled">0</div>
+          <div class="stat-label">Courses Enrolled</div>
+        </div>
+      </div>
+      <div class="stat-card anim-up d2">
+        <div class="stat-icon stat-icon-accent">📝</div>
+        <div>
+          <div class="stat-num" id="stat-assignments">0</div>
+          <div class="stat-label">Assignments</div>
+        </div>
+      </div>
+      <div class="stat-card anim-up d3">
+        <div class="stat-icon stat-icon-green">✅</div>
+        <div>
+          <div class="stat-num" id="stat-submitted">0</div>
+          <div class="stat-label">Submitted</div>
+        </div>
+      </div>
+      <div class="stat-card anim-up d4">
+        <div class="stat-icon stat-icon-teal">📅</div>
+        <div>
+          <div class="stat-num" id="stat-pending">0</div>
+          <div class="stat-label">Pending</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2 gap-24">
+      <!-- My Courses -->
+      <div>
+        <div class="flex-between mb-16">
+          <h3 style="font-size:16px;font-weight:700">🎓 My Courses</h3>
+          <a href="courses.html" class="btn btn-ghost btn-sm">All Courses</a>
+        </div>
+        <div id="my-courses-list"></div>
+      </div>
+
+      <!-- Recent Assignments -->
+      <div>
+        <div class="flex-between mb-16">
+          <h3 style="font-size:16px;font-weight:700">📝 Recent Assignments</h3>
+          <a href="assignments.html" class="btn btn-ghost btn-sm">All</a>
+        </div>
+        <div id="recent-assignments-list"></div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="mt-24">
+      <h3 style="font-size:16px;font-weight:700;margin-bottom:14px">⚡ Quick Actions</h3>
+      <div class="flex gap-12 flex-wrap">
+        <a href="courses.html" class="card card-body text-center" style="min-width:140px;padding:20px;flex:1;min-height:100px;justify-content:center;display:flex;flex-direction:column;align-items:center;gap:8px">
+          <span style="font-size:28px">🎓</span>
+          <span style="font-size:13px;font-weight:600">Browse Courses</span>
+        </a>
+        <a href="assignments.html" class="card card-body text-center" style="min-width:140px;padding:20px;flex:1;min-height:100px;justify-content:center;display:flex;flex-direction:column;align-items:center;gap:8px">
+          <span style="font-size:28px">📝</span>
+          <span style="font-size:13px;font-weight:600">My Assignments</span>
+        </a>
+        <a href="profile.html" class="card card-body text-center" style="min-width:140px;padding:20px;flex:1;min-height:100px;justify-content:center;display:flex;flex-direction:column;align-items:center;gap:8px">
+          <span style="font-size:28px">👤</span>
+          <span style="font-size:13px;font-weight:600">Edit Profile</span>
+        </a>
+        <a href="organogram.html" class="card card-body text-center" style="min-width:140px;padding:20px;flex:1;min-height:100px;justify-content:center;display:flex;flex-direction:column;align-items:center;gap:8px">
+          <span style="font-size:28px">🏢</span>
+          <span style="font-size:13px;font-weight:600">Our Team</span>
+        </a>
+        <a href="admin-panel.html" class="card card-body text-center" id="qa-admin" style="display:none;min-width:140px;padding:20px;flex:1;min-height:100px;justify-content:center;flex-direction:column;align-items:center;gap:8px">
+          <span style="font-size:28px">🛡</span>
+          <span style="font-size:13px;font-weight:600">Admin Panel</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/layout.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const user = Layout.initDashboard('dashboard', 'Dashboard');
+    if (!user) return;
+
+    document.getElementById('dash-title').textContent = `Welcome, ${user.name.split(' ')[0]}`;
+
+    // Admin links
+    if (Auth.hasPermission(user, 'view_admin_panel')) {
+      const qa = document.getElementById('qa-admin');
+      if (qa) qa.style.display = 'flex';
+    }
+
+    // Stats
+    const myEnrolls   = DB.getEnrollmentsByUser(user.id);
+    const myAssignments = DB.getAssignmentsForUser(user.id);
+    const submitted   = myAssignments.filter(a => DB.getUserSubmission(a.id, user.id));
+    document.getElementById('stat-enrolled').textContent    = myEnrolls.length;
+    document.getElementById('stat-assignments').textContent = myAssignments.length;
+    document.getElementById('stat-submitted').textContent   = submitted.length;
+    document.getElementById('stat-pending').textContent     = myAssignments.length - submitted.length;
+
+    // My courses
+    const courseList = document.getElementById('my-courses-list');
+    if (!myEnrolls.length) {
+      courseList.innerHTML = `<div class="card card-body" style="text-align:center;padding:30px"><div style="font-size:32px;margin-bottom:10px">🎓</div><p style="color:var(--text-muted);margin-bottom:12px;font-size:14px">You are not enrolled in any courses yet.</p><a href="courses.html" class="btn btn-primary btn-sm">Browse Courses</a></div>`;
+    } else {
+      courseList.innerHTML = myEnrolls.slice(0,3).map(e => {
+        const c = DB.getCourseById(e.courseId);
+        if (!c) return '';
+        return `<a href="course-detail.html?id=${c.id}" class="card card-body flex items-center gap-14 mb-10" style="text-decoration:none;padding:16px">
+          <div style="font-size:28px">${c.emoji||'🎓'}</div>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:14px;color:var(--text-dark);margin-bottom:2px">${c.title}</div>
+            <div style="font-size:12px;color:var(--text-muted)">${c.duration} · ${c.format||c.type}</div>
+          </div>
+          <span class="badge badge-success">Enrolled</span>
+        </a>`;
+      }).join('');
+    }
+
+    // Assignments
+    const asnList = document.getElementById('recent-assignments-list');
+    if (!myAssignments.length) {
+      asnList.innerHTML = `<div class="card card-body" style="text-align:center;padding:30px"><div style="font-size:32px;margin-bottom:10px">📝</div><p style="color:var(--text-muted);font-size:14px">No assignments yet.</p></div>`;
+    } else {
+      asnList.innerHTML = myAssignments.slice(0,4).map(a => {
+        const sub   = DB.getUserSubmission(a.id, user.id);
+        const days  = App.daysLeft(a.deadline);
+        const isOver= days !== null && days < 0;
+        return `<div class="card card-body mb-10" style="padding:14px">
+          <div class="flex-between gap-8 flex-wrap">
+            <div style="flex:1">
+              <div style="font-weight:600;font-size:14px;color:var(--text-dark);margin-bottom:3px">${a.title}</div>
+              <div style="font-size:12px;color:var(--text-muted)">Due ${App.formatDate(a.deadline)}</div>
+            </div>
+            <div class="flex gap-6 items-center">
+              ${sub ? `<span class="badge badge-success">✓ Submitted</span>`
+                    : isOver ? `<span class="badge badge-danger">Overdue</span>`
+                    : `<a href="assignments.html" class="btn btn-primary btn-sm">Submit</a>`}
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+  });
+</script>
+</body>
+</html>

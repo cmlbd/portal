@@ -83,7 +83,10 @@
 <script src="js/data.js"></script>
 <script src="js/app.js"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
+    // Sync cloud users when page loads
+    await DB.init();
+
     if (DB.getCurrentUser()) { window.location.href = 'dashboard.html'; return; }
 
     document.getElementById('toggle-pwd').addEventListener('click', () => {
@@ -91,27 +94,27 @@
       p.type  = p.type === 'password' ? 'text' : 'password';
     });
 
-    document.getElementById('login-form').addEventListener('submit', (e) => {
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const input = document.getElementById('login-id').value.trim();
       const pwd   = document.getElementById('login-pwd').value;
       const err   = document.getElementById('login-error');
       const btn   = document.getElementById('login-btn');
 
-      btn.innerHTML = '<div class="spinner"></div> Signing in…';
+      btn.innerHTML = '<div class="spinner"></div> Authenticating…';
       btn.disabled  = true;
       err.style.display = 'none';
 
-      setTimeout(() => {
-        const user = DB.login(input, pwd);
-        if (user) {
-          window.location.href = 'dashboard.html';
-        } else {
-          err.style.display = 'block';
-          btn.innerHTML = 'Sign In to Portal';
-          btn.disabled  = false;
-        }
-      }, 600);
+      // Await login result properly
+      const user = await DB.login(input, pwd);
+      
+      if (user) {
+        window.location.href = 'dashboard.html';
+      } else {
+        err.style.display = 'block';
+        btn.innerHTML = 'Sign In to Portal';
+        btn.disabled  = false;
+      }
     });
   });
 </script>

@@ -1,5 +1,5 @@
 // ============================================================
-// data.js v11 — Firebase Instant Realtime Cloud Database Sync
+// data.js v12 — Reliable Session Persistence & Instant Cloud Sync
 // Centre for Media Literacy Portal
 // ============================================================
 
@@ -20,7 +20,6 @@ const DB = {
   FIREBASE_DB_URL: 'https://cmlbd-portal-default-rtdb.asia-southeast1.firebasedatabase.app/users.json',
 
   async init() {
-    // 1. Initial Local Users Seed if empty
     if (!localStorage.getItem(this.KEYS.USERS)) {
       localStorage.setItem(this.KEYS.USERS, JSON.stringify([
         {
@@ -63,7 +62,6 @@ const DB = {
       ]));
     }
 
-    // 2. Sync from Firebase Cloud Database immediately
     await this.fetchCloudUsers();
 
     if (!localStorage.getItem(this.KEYS.ASSIGNMENTS)) {
@@ -194,7 +192,6 @@ const DB = {
     else list.push(user);
     localStorage.setItem(this.KEYS.USERS, JSON.stringify(list));
 
-    // Instant Realtime Cloud Push to Firebase
     await this.syncUsersToCloud(list);
   },
 
@@ -241,11 +238,10 @@ const DB = {
     return this.getUsers().some(u => u.email?.toLowerCase() === email.toLowerCase() && u.id !== excludeId);
   },
 
-  // ── FLEXIBLE & INSTANT CROSS-DEVICE LOGIN (Syncs Cloud Realtime) ──
+  // ── FLEXIBLE & INSTANT CROSS-DEVICE LOGIN ──
   async login(identifier, password) {
     if (!identifier || !password) return null;
 
-    // 1. Instant Cloud Sync First
     await this.fetchCloudUsers();
 
     const cleanInput = identifier.trim().toLowerCase();
@@ -432,8 +428,17 @@ const DB = {
     return true;
   },
 
-  // ── SESSION ──
-  getCurrentUser()    { const id = sessionStorage.getItem(this.KEYS.CURRENT_USER); return id ? this.getUserById(id) : null; },
-  setCurrentUser(id)  { sessionStorage.setItem(this.KEYS.CURRENT_USER, id); },
-  clearCurrentUser()  { sessionStorage.removeItem(this.KEYS.CURRENT_USER); }
+  // ── SESSION PERSISTENCE FIX (Both SessionStorage & LocalStorage) ──
+  getCurrentUser() {
+    const id = sessionStorage.getItem(this.KEYS.CURRENT_USER) || localStorage.getItem(this.KEYS.CURRENT_USER);
+    return id ? this.getUserById(id) : null;
+  },
+  setCurrentUser(id) {
+    sessionStorage.setItem(this.KEYS.CURRENT_USER, id);
+    localStorage.setItem(this.KEYS.CURRENT_USER, id);
+  },
+  clearCurrentUser() {
+    sessionStorage.removeItem(this.KEYS.CURRENT_USER);
+    localStorage.removeItem(this.KEYS.CURRENT_USER);
+  }
 };

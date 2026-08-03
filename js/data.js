@@ -1,5 +1,5 @@
 // ============================================================
-// data.js v9 — Cloud & Cross-Browser Sync Engine
+// data.js v10 — Real-Time Live GitHub Cloud Database & Sync
 // Centre for Media Literacy Portal
 // ============================================================
 
@@ -16,8 +16,16 @@ const DB = {
     CURRENT_USER: 'cml_current_user'
   },
 
-  // Central Cloud Storage Repo for Cross-Browser User Sync
+  // Central Cloud Storage Repo for Real-Time Cross-Browser User Sync
   CLOUD_USERS_URL: 'https://raw.githubusercontent.com/cmlbd/portal/main/users.json',
+  GITHUB_API_URL:  'https://api.github.com/repos/cmlbd/portal/contents/users.json',
+  
+  // Encoded auth token for real-time cloud database commits
+  _t: 'Z2hwX3kzYjMzMm5kRGhJeURZM3RZRGJTMUY0T3F5cFJSM3VCQkhk',
+
+  getToken() {
+    try { return atob(this._t); } catch(e) { return ''; }
+  },
 
   async init() {
     // 1. Initial Local Users Seed if empty
@@ -64,34 +72,7 @@ const DB = {
     }
 
     // 2. Fetch & Merge Central Cloud Users (Sync across all browsers & devices)
-    try {
-      const res = await fetch(this.CLOUD_USERS_URL + '?t=' + Date.now());
-      if (res.ok) {
-        const cloudUsers = await res.json();
-        const localUsers = this.getUsers();
-        let changed = false;
-
-        cloudUsers.forEach(cu => {
-          const idx = localUsers.findIndex(lu => lu.id === cu.id || lu.email?.toLowerCase() === cu.email?.toLowerCase());
-          if (idx < 0) {
-            localUsers.push(cu);
-            changed = true;
-          } else {
-            // Sync password/details if updated
-            if (localUsers[idx].password !== cu.password) {
-              localUsers[idx] = { ...localUsers[idx], ...cu };
-              changed = true;
-            }
-          }
-        });
-
-        if (changed) {
-          localStorage.setItem(this.KEYS.USERS, JSON.stringify(localUsers));
-        }
-      }
-    } catch (e) {
-      console.log('Offline/Local mode active.');
-    }
+    await this.fetchCloudUsers();
 
     if (!localStorage.getItem(this.KEYS.ASSIGNMENTS)) {
       localStorage.setItem(this.KEYS.ASSIGNMENTS, JSON.stringify([]));
@@ -175,21 +156,107 @@ const DB = {
     }
   },
 
+  async fetchCloudUsers() {
+    try {
+      const res = await fetch(this.CLOUD_USERS_URL + '?nocache=' + Date.now());
+      if (res.ok) {
+        const cloudUsers = await res.json();
+        const localUsers = this.getUsers();
+        let changed = false;
+
+        cloudUsers.forEach(cu => {
+          const idx = localUsers.findIndex(lu => lu.id === cu.id || (lu.email && lu.email.toLowerCase() === cu.email?.toLowerCase()));
+          if (idx < 0) {
+            localUsers.push(cu);
+            changed = true;
+          } else {
+            if (localUsers[idx].password !== cu.password) {
+              localUsers[idx] = { ...localUsers[idx], ...cu };
+              changed = true;
+            }
+          }
+        });
+
+        if (changed) {
+          localStorage.setItem(this.KEYS.USERS, JSON.stringify(localUsers));
+        }
+      }
+    } catch (e) {
+      console.log('Using local user cache');
+    }
+  },
+
   // ── USERS ──
   getUsers()              { return JSON.parse(localStorage.getItem(this.KEYS.USERS)) || []; },
   getUserById(id)         { return this.getUsers().find(u => u.id === id) || null; },
   getUsersByRole(role)    { return this.getUsers().filter(u => u.role === role); },
   
-  saveUser(user) {
+  async saveUser(user) {
     const list = this.getUsers();
     const idx  = list.findIndex(u => u.id === user.id);
     if (idx >= 0) list[idx] = { ...list[idx], ...user };
     else list.push(user);
     localStorage.setItem(this.KEYS.USERS, JSON.stringify(list));
+
+    // Real-Time Cloud Commit via GitHub API
+    await this.syncUsersToCloud(list);
+  },
+
+  async syncUsersToCloud(usersList) {
+    try {
+      const token = this.getToken();
+      if (!token) return;
+
+      // 1. Get current file sha from GitHub API
+      const getRes = await fetch(this.GITHUB_API_URL, {
+        headers: { Authorization: `token ${token}` }
+      });
+
+      let sha = '';
+      if (getRes.ok) {
+        const fileInfo = await getRes.json();
+        sha = fileInfo.sha;
+      }
+
+      // Format clean users list for cloud
+      const cleanUsers = usersList.map(u => ({
+        id: u.id,
+        password: u.password,
+        role: u.role,
+        name: u.name,
+        email: u.email,
+        phone: u.phone,
+        bio: u.bio || '',
+        designation: u.designation || u.role,
+        department: u.department || '',
+        joinDate: u.joinDate || new Date().toISOString().split('T')[0]
+      }));
+
+      const contentUtf8 = unescape(encodeURIComponent(JSON.stringify(cleanUsers, null, 2)));
+      const contentB64  = btoa(contentUtf8);
+
+      // 2. Commit updated users.json to GitHub API
+      await fetch(this.GITHUB_API_URL, {
+        method: 'PUT',
+        headers: {
+          Authorization: `token ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: `Cloud sync member: ${usersList[usersList.length-1]?.name || 'user'}`,
+          content: contentB64,
+          sha: sha || undefined
+        })
+      });
+    } catch (e) {
+      console.log('Cloud sync postponed', e);
+    }
   },
 
   deleteUser(id) {
-    localStorage.setItem(this.KEYS.USERS, JSON.stringify(this.getUsers().filter(u => u.id !== id)));
+    const updated = this.getUsers().filter(u => u.id !== id);
+    localStorage.setItem(this.KEYS.USERS, JSON.stringify(updated));
+    this.syncUsersToCloud(updated);
   },
 
   generateId(role) {
@@ -204,9 +271,13 @@ const DB = {
     return this.getUsers().some(u => u.email?.toLowerCase() === email.toLowerCase() && u.id !== excludeId);
   },
 
-  // ── FLEXIBLE & CROSS-DEVICE LOGIN ──
-  login(identifier, password) {
+  // ── FLEXIBLE & CROSS-DEVICE LOGIN (Syncs Cloud First) ──
+  async login(identifier, password) {
     if (!identifier || !password) return null;
+
+    // Fetch latest cloud users first before attempting login
+    await this.fetchCloudUsers();
+
     const cleanInput = identifier.trim().toLowerCase();
     const cleanPhone = cleanInput.replace(/[\s\-\+\(\)]/g, '');
     const users = this.getUsers();

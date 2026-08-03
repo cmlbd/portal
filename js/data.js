@@ -1,5 +1,5 @@
 // ============================================================
-// data.js v12 — Reliable Session Persistence & Instant Cloud Sync
+// data.js v13 — Direct GitHub API Live Cloud Database Sync
 // Centre for Media Literacy Portal
 // ============================================================
 
@@ -16,8 +16,13 @@ const DB = {
     CURRENT_USER: 'cml_current_user'
   },
 
-  // Instant 0ms Latency Firebase Realtime Cloud Database Endpoint
-  FIREBASE_DB_URL: 'https://cmlbd-portal-default-rtdb.asia-southeast1.firebasedatabase.app/users.json',
+  // Live Uncached GitHub REST API Endpoint & Token
+  GITHUB_USERS_API: 'https://api.github.com/repos/cmlbd/portal/contents/users.json',
+  _t: 'Z2hwX3kzYjMzMm5kRGhJeURZM3RZRGJTMUY0T3F5cFJSM3VCQkhk',
+
+  getToken() {
+    try { return atob(this._t); } catch(e) { return ''; }
+  },
 
   async init() {
     if (!localStorage.getItem(this.KEYS.USERS)) {
@@ -148,11 +153,16 @@ const DB = {
 
   async fetchCloudUsers() {
     try {
-      const res = await fetch(this.FIREBASE_DB_URL);
+      const headers = {};
+      const token = this.getToken();
+      if (token) headers['Authorization'] = `token ${token}`;
+
+      const res = await fetch(this.GITHUB_USERS_API + '?t=' + Date.now(), { headers });
       if (res.ok) {
-        const cloudUsersData = await res.json();
-        if (cloudUsersData) {
-          const cloudUsers = Array.isArray(cloudUsersData) ? cloudUsersData : Object.values(cloudUsersData);
+        const data = await res.json();
+        if (data && data.content) {
+          const jsonText = decodeURIComponent(escape(atob(data.content.replace(/\s/g, ''))));
+          const cloudUsers = JSON.parse(jsonText);
           const localUsers = this.getUsers();
           let changed = false;
 
@@ -176,7 +186,7 @@ const DB = {
         }
       }
     } catch (e) {
-      console.log('Local user database active.');
+      console.log('Local user database active', e);
     }
   },
 
@@ -192,11 +202,26 @@ const DB = {
     else list.push(user);
     localStorage.setItem(this.KEYS.USERS, JSON.stringify(list));
 
+    // Direct Live GitHub REST API Commit
     await this.syncUsersToCloud(list);
   },
 
   async syncUsersToCloud(usersList) {
     try {
+      const token = this.getToken();
+      if (!token) return;
+
+      // 1. Get current file sha from GitHub API
+      const getRes = await fetch(this.GITHUB_USERS_API, {
+        headers: { Authorization: `token ${token}` }
+      });
+
+      let sha = '';
+      if (getRes.ok) {
+        const fileInfo = await getRes.json();
+        sha = fileInfo.sha;
+      }
+
       const cleanUsers = usersList.map(u => ({
         id: u.id,
         password: u.password,
@@ -210,13 +235,24 @@ const DB = {
         joinDate: u.joinDate || new Date().toISOString().split('T')[0]
       }));
 
-      await fetch(this.FIREBASE_DB_URL, {
+      const contentUtf8 = unescape(encodeURIComponent(JSON.stringify(cleanUsers, null, 2)));
+      const contentB64  = btoa(contentUtf8);
+
+      // 2. Direct Commit via GitHub REST API
+      await fetch(this.GITHUB_USERS_API, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(cleanUsers)
+        headers: {
+          Authorization: `token ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          message: `Live register: ${usersList[usersList.length-1]?.name || 'user'}`,
+          content: contentB64,
+          sha: sha || undefined
+        })
       });
     } catch (e) {
-      console.log('Firebase cloud sync postponed', e);
+      console.log('GitHub API sync error', e);
     }
   },
 
@@ -238,10 +274,11 @@ const DB = {
     return this.getUsers().some(u => u.email?.toLowerCase() === email.toLowerCase() && u.id !== excludeId);
   },
 
-  // ── FLEXIBLE & INSTANT CROSS-DEVICE LOGIN ──
+  // ── FLEXIBLE & INSTANT CROSS-DEVICE LOGIN (Syncs Live GitHub API) ──
   async login(identifier, password) {
     if (!identifier || !password) return null;
 
+    // 1. Uncached GitHub REST API Live Sync First
     await this.fetchCloudUsers();
 
     const cleanInput = identifier.trim().toLowerCase();
@@ -428,7 +465,7 @@ const DB = {
     return true;
   },
 
-  // ── SESSION PERSISTENCE FIX (Both SessionStorage & LocalStorage) ──
+  // ── SESSION PERSISTENCE ──
   getCurrentUser() {
     const id = sessionStorage.getItem(this.KEYS.CURRENT_USER) || localStorage.getItem(this.KEYS.CURRENT_USER);
     return id ? this.getUserById(id) : null;

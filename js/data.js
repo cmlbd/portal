@@ -1,5 +1,5 @@
 // ============================================================
-// data.js v7 — Pre-seeded Accounts for Cross-Browser Login
+// data.js v8 — Email or Phone Number Login Support
 // Centre for Media Literacy Portal
 // ============================================================
 
@@ -17,13 +17,12 @@ const DB = {
   },
 
   init() {
-    // Pre-seed accounts so ANY browser can log in immediately
     if (!localStorage.getItem(this.KEYS.USERS)) {
       localStorage.setItem(this.KEYS.USERS, JSON.stringify([
         {
           id: 'CML-DIR-001', password: 'director123',
           role: 'director', name: 'Director General',
-          email: 'director@cml.org', phone: '+880 1700-000001',
+          email: 'director@cml.org', phone: '+8801700000001',
           bio: 'Director General of Centre for Media Literacy. Leading the organisation towards a media-literate society.',
           photo: null, designation: 'Director General',
           department: 'Management',
@@ -34,7 +33,7 @@ const DB = {
         {
           id: 'CML-ADM-001', password: 'admin123',
           role: 'admin', name: 'Executive Administrator',
-          email: 'admin@cml.org', phone: '+880 1700-000002',
+          email: 'admin@cml.org', phone: '+8801700000002',
           bio: 'Administrator of CML Portal.',
           photo: null, designation: 'System Admin',
           department: 'Administration',
@@ -45,7 +44,7 @@ const DB = {
         {
           id: 'CML-ADV-001', password: 'advisor123',
           role: 'advisor', name: 'Media Advisor',
-          email: 'advisor@cml.org', phone: '+880 1700-000003',
+          email: 'advisor@cml.org', phone: '+8801700000003',
           bio: 'Senior Media Advisory Board Member.',
           photo: null, designation: 'Senior Advisor',
           department: 'Advisory',
@@ -56,7 +55,7 @@ const DB = {
         {
           id: 'CML-MBR-001', password: 'member123',
           role: 'member', name: 'General Member',
-          email: 'member@cml.org', phone: '+880 1700-000004',
+          email: 'member@cml.org', phone: '+8801700000004',
           bio: 'Active member of Centre for Media Literacy.',
           photo: null, designation: 'Media Activist',
           department: 'General Member',
@@ -109,13 +108,11 @@ const DB = {
     }
 
     if (!localStorage.getItem(this.KEYS.ENROLLMENTS)) {
-      // Pre-enroll default member CML-MBR-001 so they are ready
       localStorage.setItem(this.KEYS.ENROLLMENTS, JSON.stringify([
         { userId: 'CML-MBR-001', courseId: 'CML-CRS-001', enrolledAt: new Date().toISOString(), progress: 0, completed: false }
       ]));
     }
 
-    // ── 11 Renamed Photos (1.jpg to 11.jpg / 1.png to 11.png in folder) ──
     const tasks = [
       // Question 1: 11 Designs
       { id: 'Q1-TASK-01', question: 1, num: 1, title: 'Recreate Reference Design #1', filename: '1', deadline: '2026-08-06', points: 10 },
@@ -177,9 +174,25 @@ const DB = {
   isEmailTaken(email, excludeId = null) {
     return this.getUsers().some(u => u.email?.toLowerCase() === email.toLowerCase() && u.id !== excludeId);
   },
-  login(id, password) {
-    const user = this.getUserById(id.trim().toUpperCase());
-    if (user && user.password === password) { this.setCurrentUser(user.id); return user; }
+
+  // ── FLEXIBLE LOGIN BY EMAIL, PHONE OR MEMBER ID ──
+  login(identifier, password) {
+    if (!identifier || !password) return null;
+    const cleanInput = identifier.trim().toLowerCase();
+    const cleanPhone = cleanInput.replace(/[\s\-\+\(\)]/g, '');
+    const users = this.getUsers();
+
+    const user = users.find(u => {
+      const uEmail = (u.email || '').toLowerCase();
+      const uPhone = (u.phone || '').replace(/[\s\-\+\(\)]/g, '').toLowerCase();
+      const uId    = (u.id || '').toLowerCase();
+      return uEmail === cleanInput || (uPhone && uPhone === cleanPhone) || uId === cleanInput;
+    });
+
+    if (user && user.password === password) {
+      this.setCurrentUser(user.id);
+      return user;
+    }
     return null;
   },
 

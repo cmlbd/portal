@@ -42,19 +42,19 @@
     <div class="auth-card">
       <div class="auth-logo">CML</div>
       <h1 class="auth-title">Sign In</h1>
-      <p class="auth-subtitle">Enter your CML Member ID and password.</p>
+      <p class="auth-subtitle">Enter your Email or Phone Number and password.</p>
 
       <form id="login-form">
         <div class="form-group">
-          <label class="form-label">CML Member ID</label>
+          <label class="form-label">Email Address or Phone Number *</label>
           <div class="input-wrap">
-            <span class="input-icon">🪪</span>
-            <input type="text" id="login-id" class="form-input" placeholder="e.g. CML-MBR-001" required autocomplete="username" style="padding-left:40px;text-transform:uppercase">
+            <span class="input-icon">✉️</span>
+            <input type="text" id="login-id" class="form-input" placeholder="name@example.com or +880 17..." required autocomplete="username" style="padding-left:40px">
           </div>
         </div>
         <div class="form-group">
           <div class="flex-between" style="margin-bottom:6px">
-            <label class="form-label" style="margin-bottom:0">Password</label>
+            <label class="form-label" style="margin-bottom:0">Password *</label>
             <a href="forgot-password.html" style="font-size:12px;color:var(--primary);font-weight:600">Forgot Password?</a>
           </div>
           <div class="input-wrap">
@@ -65,7 +65,7 @@
         </div>
 
         <div id="login-error" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:8px;padding:10px 14px;font-size:13px;color:var(--red);margin-bottom:16px">
-          ❌ Invalid Member ID or password. Please try again or <a href="forgot-password.html" style="color:var(--red);font-weight:700">Reset Password</a>.
+          ❌ Invalid Email/Phone or password. Please try again or <a href="forgot-password.html" style="color:var(--red);font-weight:700">Reset Password</a>.
         </div>
 
         <button type="submit" class="btn btn-primary btn-full" id="login-btn" style="height:48px;font-size:15px">
@@ -91,23 +91,19 @@
       p.type  = p.type === 'password' ? 'text' : 'password';
     });
 
-    document.getElementById('login-id').addEventListener('input', function() {
-      this.value = this.value.toUpperCase();
-    });
-
     document.getElementById('login-form').addEventListener('submit', (e) => {
       e.preventDefault();
-      const id  = document.getElementById('login-id').value.trim();
-      const pwd = document.getElementById('login-pwd').value;
-      const err = document.getElementById('login-error');
-      const btn = document.getElementById('login-btn');
+      const input = document.getElementById('login-id').value.trim();
+      const pwd   = document.getElementById('login-pwd').value;
+      const err   = document.getElementById('login-error');
+      const btn   = document.getElementById('login-btn');
 
       btn.innerHTML = '<div class="spinner"></div> Signing in…';
       btn.disabled  = true;
       err.style.display = 'none';
 
       setTimeout(() => {
-        const user = DB.login(id, pwd);
+        const user = DB.login(input, pwd);
         if (user) {
           window.location.href = 'dashboard.html';
         } else {

@@ -1,5 +1,5 @@
 // ============================================================
-// data.js v8 — Email or Phone Number Login Support
+// data.js v9 — Cloud & Cross-Browser Sync Engine
 // Centre for Media Literacy Portal
 // ============================================================
 
@@ -16,19 +16,21 @@ const DB = {
     CURRENT_USER: 'cml_current_user'
   },
 
-  init() {
+  // Central Cloud Storage Repo for Cross-Browser User Sync
+  CLOUD_USERS_URL: 'https://raw.githubusercontent.com/cmlbd/portal/main/users.json',
+
+  async init() {
+    // 1. Initial Local Users Seed if empty
     if (!localStorage.getItem(this.KEYS.USERS)) {
       localStorage.setItem(this.KEYS.USERS, JSON.stringify([
         {
           id: 'CML-DIR-001', password: 'director123',
           role: 'director', name: 'Director General',
           email: 'director@cml.org', phone: '+8801700000001',
-          bio: 'Director General of Centre for Media Literacy. Leading the organisation towards a media-literate society.',
+          bio: 'Director General of Centre for Media Literacy.',
           photo: null, designation: 'Director General',
-          department: 'Management',
-          joinDate: '2024-01-01',
-          customPermissions: ['all'],
-          createdAt: new Date().toISOString()
+          department: 'Management', joinDate: '2024-01-01',
+          customPermissions: ['all'], createdAt: new Date().toISOString()
         },
         {
           id: 'CML-ADM-001', password: 'admin123',
@@ -36,8 +38,7 @@ const DB = {
           email: 'admin@cml.org', phone: '+8801700000002',
           bio: 'Administrator of CML Portal.',
           photo: null, designation: 'System Admin',
-          department: 'Administration',
-          joinDate: '2024-01-05',
+          department: 'Administration', joinDate: '2024-01-05',
           customPermissions: ['assign_assignments','view_assignments','view_profiles','manage_members','view_admin_panel','manage_courses'],
           createdAt: new Date().toISOString()
         },
@@ -47,10 +48,8 @@ const DB = {
           email: 'advisor@cml.org', phone: '+8801700000003',
           bio: 'Senior Media Advisory Board Member.',
           photo: null, designation: 'Senior Advisor',
-          department: 'Advisory',
-          joinDate: '2024-01-10',
-          customPermissions: [],
-          createdAt: new Date().toISOString()
+          department: 'Advisory', joinDate: '2024-01-10',
+          customPermissions: [], createdAt: new Date().toISOString()
         },
         {
           id: 'CML-MBR-001', password: 'member123',
@@ -58,12 +57,40 @@ const DB = {
           email: 'member@cml.org', phone: '+8801700000004',
           bio: 'Active member of Centre for Media Literacy.',
           photo: null, designation: 'Media Activist',
-          department: 'General Member',
-          joinDate: '2024-02-01',
-          customPermissions: [],
-          createdAt: new Date().toISOString()
+          department: 'General Member', joinDate: '2024-02-01',
+          customPermissions: [], createdAt: new Date().toISOString()
         }
       ]));
+    }
+
+    // 2. Fetch & Merge Central Cloud Users (Sync across all browsers & devices)
+    try {
+      const res = await fetch(this.CLOUD_USERS_URL + '?t=' + Date.now());
+      if (res.ok) {
+        const cloudUsers = await res.json();
+        const localUsers = this.getUsers();
+        let changed = false;
+
+        cloudUsers.forEach(cu => {
+          const idx = localUsers.findIndex(lu => lu.id === cu.id || lu.email?.toLowerCase() === cu.email?.toLowerCase());
+          if (idx < 0) {
+            localUsers.push(cu);
+            changed = true;
+          } else {
+            // Sync password/details if updated
+            if (localUsers[idx].password !== cu.password) {
+              localUsers[idx] = { ...localUsers[idx], ...cu };
+              changed = true;
+            }
+          }
+        });
+
+        if (changed) {
+          localStorage.setItem(this.KEYS.USERS, JSON.stringify(localUsers));
+        }
+      }
+    } catch (e) {
+      console.log('Offline/Local mode active.');
     }
 
     if (!localStorage.getItem(this.KEYS.ASSIGNMENTS)) {
@@ -114,7 +141,6 @@ const DB = {
     }
 
     const tasks = [
-      // Question 1: 11 Designs
       { id: 'Q1-TASK-01', question: 1, num: 1, title: 'Recreate Reference Design #1', filename: '1', deadline: '2026-08-06', points: 10 },
       { id: 'Q1-TASK-02', question: 1, num: 2, title: 'Recreate Reference Design #2', filename: '2', deadline: '2026-08-06', points: 10 },
       { id: 'Q1-TASK-03', question: 1, num: 3, title: 'Recreate Reference Design #3', filename: '3', deadline: '2026-08-06', points: 10 },
@@ -129,7 +155,6 @@ const DB = {
       { id: 'Q1-TASK-10', question: 1, num: 10, title: 'Recreate Reference Design #10', filename: '10', deadline: '2026-08-16', points: 10 },
       { id: 'Q1-TASK-11', question: 1, num: 11, title: 'Recreate Reference Design #11', filename: '11', deadline: '2026-08-16', points: 10 },
 
-      // Question 2: 4 Self-Reported News Cards
       { id: 'Q2-TASK-01', question: 2, num: 1, title: 'News Card #1 (Own Report)', deadline: '2026-08-20', points: 15 },
       { id: 'Q2-TASK-02', question: 2, num: 2, title: 'News Card #2 (Own Report)', deadline: '2026-08-20', points: 15 },
       { id: 'Q2-TASK-03', question: 2, num: 3, title: 'News Card #3 (Own Report)', deadline: '2026-08-20', points: 15 },
@@ -154,6 +179,7 @@ const DB = {
   getUsers()              { return JSON.parse(localStorage.getItem(this.KEYS.USERS)) || []; },
   getUserById(id)         { return this.getUsers().find(u => u.id === id) || null; },
   getUsersByRole(role)    { return this.getUsers().filter(u => u.role === role); },
+  
   saveUser(user) {
     const list = this.getUsers();
     const idx  = list.findIndex(u => u.id === user.id);
@@ -161,9 +187,11 @@ const DB = {
     else list.push(user);
     localStorage.setItem(this.KEYS.USERS, JSON.stringify(list));
   },
+
   deleteUser(id) {
     localStorage.setItem(this.KEYS.USERS, JSON.stringify(this.getUsers().filter(u => u.id !== id)));
   },
+
   generateId(role) {
     const pre = { director:'DIR', admin:'ADM', advisor:'ADV', member:'MBR' };
     const p   = pre[role] || 'USR';
@@ -171,11 +199,12 @@ const DB = {
     const next = nums.length ? Math.max(...nums) + 1 : 1;
     return `CML-${p}-${String(next).padStart(3,'0')}`;
   },
+
   isEmailTaken(email, excludeId = null) {
     return this.getUsers().some(u => u.email?.toLowerCase() === email.toLowerCase() && u.id !== excludeId);
   },
 
-  // ── FLEXIBLE LOGIN BY EMAIL, PHONE OR MEMBER ID ──
+  // ── FLEXIBLE & CROSS-DEVICE LOGIN ──
   login(identifier, password) {
     if (!identifier || !password) return null;
     const cleanInput = identifier.trim().toLowerCase();

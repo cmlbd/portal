@@ -1,5 +1,5 @@
 // ============================================================
-// data.js v15 — Uncached Real-Time Cloud Sync Engine
+// data.js v18 — Google Firebase Realtime Cloud SDK Engine
 // Centre for Media Literacy Portal
 // ============================================================
 
@@ -16,16 +16,26 @@ const DB = {
     CURRENT_USER: 'cml_current_user'
   },
 
-  // Live GitHub REST API & Token
-  GITHUB_USERS_API: 'https://api.github.com/repos/cmlbd/portal/contents/users.json',
-  RAW_USERS_URL:    'https://raw.githubusercontent.com/cmlbd/portal/main/users.json',
-  _t: 'Z2hwX3kzYjMzMm5kRGhJeURZM3RZRGJTMUY0T3F5cFJSM3VCQkhk',
+  // Firebase Realtime Database Config
+  FIREBASE_CONFIG: {
+    databaseURL: "https://cml-portal-default-rtdb.firebaseio.com"
+  },
 
-  getToken() {
-    try { return atob(this._t); } catch(e) { return ''; }
+  RAW_USERS_URL: 'https://raw.githubusercontent.com/cmlbd/portal/main/users.json',
+
+  initFirebase() {
+    if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+      try {
+        firebase.initializeApp(this.FIREBASE_CONFIG);
+      } catch (e) {
+        console.log('Firebase init note:', e);
+      }
+    }
   },
 
   async init() {
+    this.initFirebase();
+
     if (!localStorage.getItem(this.KEYS.USERS)) {
       localStorage.setItem(this.KEYS.USERS, JSON.stringify([
         {
@@ -155,36 +165,28 @@ const DB = {
   async fetchCloudUsers() {
     let cloudUsers = null;
 
-    // Method 1: Try GitHub REST API
-    try {
-      const token = this.getToken();
-      const headers = { 'Accept': 'application/vnd.github.v3+json' };
-      if (token) headers['Authorization'] = 'token ' + token;
-
-      const res = await fetch(this.GITHUB_USERS_API + '?nocache=' + Date.now(), { headers });
-      if (res.ok) {
-        const data = await res.json();
-        if (data && data.content) {
-          const cleanB64 = data.content.replace(/\s/g, '');
-          const jsonStr  = decodeURIComponent(Array.prototype.map.call(atob(cleanB64), function(c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-          }).join(''));
-          cloudUsers = JSON.parse(jsonStr);
+    // 1. Google Firebase Realtime Database SDK Fetch
+    if (typeof firebase !== 'undefined' && firebase.apps.length) {
+      try {
+        const snapshot = await firebase.database().ref('users').once('value');
+        if (snapshot.exists()) {
+          const val = snapshot.val();
+          cloudUsers = Array.isArray(val) ? val : Object.values(val);
         }
+      } catch (e) {
+        console.log('Firebase SDK fetch note:', e);
       }
-    } catch (e) {
-      console.log('GitHub API fetch fallback');
     }
 
-    // Method 2: Fallback to Raw GitHub URL
+    // 2. Direct GitHub Raw Fallback
     if (!cloudUsers) {
       try {
-        const rawRes = await fetch(this.RAW_USERS_URL + '?nocache=' + Date.now());
-        if (rawRes.ok) {
-          cloudUsers = await rawRes.json();
+        const res = await fetch(this.RAW_USERS_URL + '?nocache=' + Date.now());
+        if (res.ok) {
+          cloudUsers = await res.json();
         }
-      } catch(e) {
-        console.log('Raw fetch fallback');
+      } catch (e) {
+        console.log('GitHub Raw fallback note:', e);
       }
     }
 
@@ -228,59 +230,25 @@ const DB = {
   },
 
   async syncUsersToCloud(usersList) {
-    try {
-      const token = this.getToken();
-      if (!token) return false;
-
-      const getRes = await fetch(this.GITHUB_USERS_API + '?nocache=' + Date.now(), {
-        headers: {
-          'Authorization': 'token ' + token,
-          'Accept': 'application/vnd.github.v3+json'
-        }
-      });
-
-      let sha = '';
-      if (getRes.ok) {
-        const fileInfo = await getRes.json();
-        sha = fileInfo.sha;
+    // Save to Google Firebase Realtime Database
+    if (typeof firebase !== 'undefined' && firebase.apps.length) {
+      try {
+        const cleanUsers = usersList.map(u => ({
+          id: u.id,
+          password: u.password,
+          role: u.role,
+          name: u.name,
+          email: u.email,
+          phone: u.phone,
+          bio: u.bio || '',
+          designation: u.designation || u.role,
+          department: u.department || '',
+          joinDate: u.joinDate || new Date().toISOString().split('T')[0]
+        }));
+        await firebase.database().ref('users').set(cleanUsers);
+      } catch (e) {
+        console.log('Firebase SDK sync note:', e);
       }
-
-      const cleanUsers = usersList.map(u => ({
-        id: u.id,
-        password: u.password,
-        role: u.role,
-        name: u.name,
-        email: u.email,
-        phone: u.phone,
-        bio: u.bio || '',
-        designation: u.designation || u.role,
-        department: u.department || '',
-        joinDate: u.joinDate || new Date().toISOString().split('T')[0]
-      }));
-
-      const jsonStr = JSON.stringify(cleanUsers, null, 2);
-      const contentB64 = btoa(encodeURIComponent(jsonStr).replace(/%([0-9A-F]{2})/g, function(match, p1) {
-        return String.fromCharCode('0x' + p1);
-      }));
-
-      const putRes = await fetch(this.GITHUB_USERS_API, {
-        method: 'PUT',
-        headers: {
-          'Authorization': 'token ' + token,
-          'Content-Type': 'application/json',
-          'Accept': 'application/vnd.github.v3+json'
-        },
-        body: JSON.stringify({
-          message: `Cloud register user: ${usersList[usersList.length-1]?.name || 'user'}`,
-          content: contentB64,
-          sha: sha || undefined
-        })
-      });
-
-      return putRes.ok;
-    } catch (e) {
-      console.error('Cloud sync error:', e);
-      return false;
     }
   },
 
@@ -306,7 +274,6 @@ const DB = {
   async login(identifier, password) {
     if (!identifier || !password) return null;
 
-    // Always fetch latest cloud users before checking login
     await this.fetchCloudUsers();
 
     const cleanInput = identifier.trim().toLowerCase();

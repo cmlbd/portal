@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assignments — Centre for Media Literacy</title>
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .asn-item { padding: 18px; border-bottom: 1px solid var(--border); transition: background var(--transition); }
+    .asn-item:last-child { border-bottom: none; }
+    .asn-item:hover { background: var(--bg-light); }
+  </style>
+</head>
+<body>
+
+<div class="dash-main" id="dash-main-content">
+  <!-- Topbar injected by Layout -->
+
+  <div class="dash-content">
+    <div class="page-header">
+      <div class="page-header-left">
+        <div class="page-header-eyebrow">Work</div>
+        <div class="page-header-title">Assignments</div>
+        <div class="page-header-desc">View, manage and submit your assignments.</div>
+      </div>
+      <button class="btn btn-primary btn-sm" id="create-btn" style="display:none" onclick="App.openModal('create-modal')">+ New Assignment</button>
+    </div>
+
+    <!-- FEATURED CANVA COURSE ASSIGNMENT BANNER -->
+    <div class="card card-body mb-24 anim-up" style="background:linear-gradient(135deg, #0a2342 0%, #1e3a8a 100%);color:white;border:1px solid rgba(200,146,42,0.4)">
+      <div class="flex-between flex-wrap gap-16">
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+            <span class="badge badge-accent">Featured Course Assignment</span>
+            <span style="font-size:12px;color:rgba(255,255,255,0.7)">Started 1 August 2026</span>
+          </div>
+          <h3 style="color:white;font-size:20px;margin-bottom:8px;font-family:'Merriweather',serif">Advanced Canva Designing — Part 1</h3>
+          <p style="color:rgba(255,255,255,0.8);font-size:14px;margin-bottom:12px;max-width:720px;line-height:1.6">
+            <strong>প্রশ্ন ১:</strong> ১১টি রেফারেন্স ডিজাইন Recreate করা (ডেডলাইন: ৬, ৯ ও ১৬ই আগস্ট)<br>
+            <strong>প্রশ্ন ২:</strong> ৪টি সংবাদের নিউজ কার্ড তৈরি করা (ডেডলাইন: ২০শে আগস্ট)<br>
+            <strong>📢 লিখিত পরীক্ষা:</strong> ২০শে আগস্টের পর অনুষ্ঠিত হবে।
+          </p>
+        </div>
+        <div style="align-self:center">
+          <a href="canva-assignment.html" class="btn btn-primary btn-lg" style="white-space:nowrap">Open Canva Tasks Portal →</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="tabs">
+      <button class="tab-btn active" onclick="setFilter(event,'all')">All</button>
+      <button class="tab-btn" onclick="setFilter(event,'pending')">Pending</button>
+      <button class="tab-btn" onclick="setFilter(event,'submitted')">Submitted</button>
+      <button class="tab-btn" onclick="setFilter(event,'overdue')">Overdue</button>
+    </div>
+
+    <div class="card" id="asn-container">
+      <div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">Loading…</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Create Modal -->
+<div class="modal-overlay" id="create-modal">
+  <div class="modal" style="max-width:560px">
+    <button class="modal-close" onclick="App.closeModal('create-modal')">✕</button>
+    <h2 class="modal-title">📝 New Assignment</h2>
+    <form id="create-form">
+      <div class="form-group">
+        <label class="form-label">Title *</label>
+        <input type="text" id="asn-title" class="form-input" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description *</label>
+        <textarea id="asn-desc" class="form-textarea" rows="4" required></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Deadline *</label>
+        <input type="date" id="asn-deadline" class="form-input" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Assign To</label>
+        <select id="asn-to" class="form-select" multiple style="height:130px">
+          <option value="all" selected>📢 All Members</option>
+        </select>
+        <div class="form-hint">Hold Ctrl/Cmd for multiple selection. "All Members" assigns to everyone.</div>
+      </div>
+      <div class="flex gap-10 mt-16">
+        <button type="submit" class="btn btn-primary btn-full">Create</button>
+        <button type="button" class="btn btn-ghost btn-full" onclick="App.closeModal('create-modal')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Submit Modal -->
+<div class="modal-overlay" id="submit-modal">
+  <div class="modal" style="max-width:540px">
+    <button class="modal-close" onclick="App.closeModal('submit-modal')">✕</button>
+    <h2 class="modal-title" id="sm-title">Submit Assignment</h2>
+    <div id="sm-desc" style="padding:12px 14px;background:var(--bg-section);border-radius:8px;font-size:14px;color:var(--text-muted);margin-bottom:18px;line-height:1.6"></div>
+    <form id="submit-form">
+      <input type="hidden" id="sm-id">
+      <div class="form-group">
+        <label class="form-label">Your Submission *</label>
+        <textarea id="sm-content" class="form-textarea" rows="5" placeholder="Write your response…" required></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Attach File (max 5MB)</label>
+        <input type="file" id="sm-file" class="form-input" style="padding:8px" accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg">
+      </div>
+      <div class="flex gap-10">
+        <button type="submit" class="btn btn-success btn-full">📤 Submit</button>
+        <button type="button" class="btn btn-ghost btn-full" onclick="App.closeModal('submit-modal')">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- View Submissions Modal -->
+<div class="modal-overlay" id="vsub-modal">
+  <div class="modal" style="max-width:600px">
+    <button class="modal-close" onclick="App.closeModal('vsub-modal')">✕</button>
+    <h2 class="modal-title" id="vsub-title">Submissions</h2>
+    <div id="vsub-content"></div>
+  </div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/layout.js"></script>
+<script>
+  let currentUser, filterMode = 'all';
+
+  document.addEventListener('DOMContentLoaded', () => {
+    currentUser = Layout.initDashboard('assignments', 'Assignments');
+    if (!currentUser) return;
+
+    if (Auth.hasPermission(currentUser, 'assign_assignments')) {
+      document.getElementById('create-btn').style.display = 'flex';
+      populateAssignTo();
+    }
+    document.getElementById('asn-deadline').min = new Date().toISOString().split('T')[0];
+    render();
+  });
+
+  function populateAssignTo() {
+    const sel = document.getElementById('asn-to');
+    DB.getUsers().filter(u => u.id !== currentUser.id).forEach(u => {
+      const opt = document.createElement('option');
+      opt.value = u.id;
+      opt.textContent = `${u.name} [${u.role}]`;
+      sel.appendChild(opt);
+    });
+  }
+
+  function setFilter(e, mode) {
+    filterMode = mode;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    e.target.classList.add('active');
+    render();
+  }
+
+  function render() {
+    const con = document.getElementById('asn-container');
+    let items = Auth.hasPermission(currentUser,'view_admin_panel') ? DB.getAssignments() : DB.getAssignmentsForUser(currentUser.id);
+    if (filterMode !== 'all') {
+      items = items.filter(a => {
+        const sub  = DB.getUserSubmission(a.id, currentUser.id);
+        const over = App.isDue(a.deadline);
+        if (filterMode === 'submitted') return !!sub;
+        if (filterMode === 'pending')   return !sub && !over;
+        if (filterMode === 'overdue')   return !sub && over;
+        return true;
+      });
+    }
+    if (!items.length) {
+      con.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><div class="empty-title">No general assignments</div><div class="empty-desc">Check out the Canva Course Assignment banner above for your course tasks.</div></div>`;
+      return;
+    }
+    con.innerHTML = items.map(renderItem).join('');
+  }
+
+  function renderItem(a) {
+    const sub    = DB.getUserSubmission(a.id, currentUser.id);
+    const days   = App.daysLeft(a.deadline);
+    const isOver = days !== null && days < 0;
+    const isSoon = days !== null && days >= 0 && days <= 3;
+    let chip = `<span class="badge badge-success">${days}d left</span>`;
+    if (isOver) chip = `<span class="badge badge-danger">Overdue</span>`;
+    else if (isSoon) chip = `<span class="badge badge-warning">${days}d left</span>`;
+    const canAdmin = Auth.hasPermission(currentUser,'assign_assignments');
+    const assigner = DB.getUserById(a.assignedBy);
+    return `<div class="asn-item">
+      <div class="flex-between flex-wrap gap-12 mb-10">
+        <div style="flex:1">
+          <div style="font-weight:700;font-size:15px;color:var(--text-dark);margin-bottom:5px">${a.title}</div>
+          <div class="flex gap-12 flex-wrap" style="font-size:12px;color:var(--text-muted)">
+            <span>📅 Due: ${App.formatDate(a.deadline)}</span>
+            ${chip}
+            <span>👤 By: ${assigner?.name||a.assignedBy}</span>
+            <code style="font-size:11px">${a.id}</code>
+          </div>
+        </div>
+        <div class="flex gap-8 items-center flex-wrap">
+          ${canAdmin ? `<button class="btn btn-ghost btn-sm" onclick="viewSubs('${a.id}')">👁 (${(a.submissions||[]).length})</button>` : ''}
+          ${canAdmin ? `<button class="btn btn-danger btn-sm" onclick="deleteAsn('${a.id}')">🗑</button>` : ''}
+          ${sub
+            ? `<span class="badge badge-success">✓ Submitted ${App.timeAgo(sub.submittedAt)}</span>`
+            : (!isOver ? `<button class="btn btn-primary btn-sm" onclick="openSubmit('${a.id}')">📤 Submit</button>` : `<span class="badge badge-danger">Overdue</span>`)}
+        </div>
+      </div>
+      <p style="font-size:13.5px;color:var(--text-muted);line-height:1.6">${a.description}</p>
+      ${sub ? `<div style="margin-top:10px;padding:10px 14px;background:rgba(26,122,74,0.06);border:1px solid rgba(26,122,74,0.15);border-radius:8px;font-size:13px;color:var(--text-body)">
+        <strong style="color:var(--green)">✓ Your submission:</strong> ${sub.content.slice(0,150)}${sub.content.length>150?'…':''}
+        ${sub.fileName ? `<br><span style="color:var(--text-muted);font-size:11px">📎 ${sub.fileName}</span>` : ''}
+      </div>` : ''}
+    </div>`;
+  }
+
+  function openSubmit(id) {
+    const a = DB.getAssignmentById(id);
+    document.getElementById('sm-id').value = id;
+    document.getElementById('sm-title').textContent = `Submit: ${a.title}`;
+    document.getElementById('sm-desc').textContent  = a.description;
+    const prev = DB.getUserSubmission(id, currentUser.id);
+    document.getElementById('sm-content').value = prev?.content || '';
+    App.openModal('submit-modal');
+  }
+
+  document.getElementById('create-form').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const title    = document.getElementById('asn-title').value.trim();
+    const desc     = document.getElementById('asn-desc').value.trim();
+    const deadline = document.getElementById('asn-deadline').value;
+    const sel      = document.getElementById('asn-to');
+    const selected = Array.from(sel.selectedOptions).map(o=>o.value);
+    if (!title||!desc||!deadline) { App.showToast('Fill all fields.','error'); return; }
+    DB.saveAssignment({
+      id:          DB.generateAssignmentId(),
+      title, description:desc, deadline,
+      assignedTo:  selected.includes('all')?['all']:selected,
+      assignedBy:  currentUser.id,
+      createdAt:   new Date().toISOString(),
+      status:      'active', submissions: []
+    });
+    App.closeModal('create-modal');
+    document.getElementById('create-form').reset();
+    render();
+    App.showToast('Assignment created!','success');
+  });
+
+  document.getElementById('submit-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const id = document.getElementById('sm-id').value;
+    const content = document.getElementById('sm-content').value.trim();
+    const file = document.getElementById('sm-file').files[0];
+    if (!content) { App.showToast('Write a response.','error'); return; }
+    let fileData=null, fileName=null;
+    if (file) {
+      if (file.size>5*1024*1024) { App.showToast('Max 5MB.','error'); return; }
+      fileData = await App.fileToBase64(file);
+      fileName = file.name;
+    }
+    DB.submitAssignment(id, currentUser.id, {content,fileData,fileName});
+    App.closeModal('submit-modal');
+    render();
+    App.showToast('Submitted successfully!','success');
+  });
+
+  function viewSubs(id) {
+    const a = DB.getAssignmentById(id);
+    document.getElementById('vsub-title').textContent = `Submissions: ${a.title}`;
+    const subs = a.submissions||[];
+    document.getElementById('vsub-content').innerHTML = !subs.length
+      ? `<div class="empty-state" style="padding:30px"><div class="empty-icon">📭</div><div class="empty-title">No submissions yet</div></div>`
+      : subs.map(s => {
+          const u = DB.getUserById(s.userId);
+          return `<div style="padding:14px;border:1px solid var(--border);border-radius:10px;margin-bottom:10px">
+            <div class="flex items-center gap-12 mb-10">
+              ${App.avatarHtml(u,'sm')}
+              <div><div style="font-weight:700;font-size:14px">${u?.name||s.userId}</div><div style="font-size:12px;color:var(--text-muted)">${App.formatDateTime(s.submittedAt)}</div></div>
+              <span class="badge badge-success ml-auto">✓</span>
+            </div>
+            <p style="font-size:14px;color:var(--text-body);line-height:1.6">${s.content}</p>
+            ${s.fileName?`<div style="font-size:12px;color:var(--text-muted);margin-top:6px">📎 ${s.fileName}</div>`:''}
+          </div>`;
+        }).join('');
+    App.openModal('vsub-modal');
+  }
+
+  function deleteAsn(id) {
+    App.confirm('Delete this assignment and all submissions?', () => {
+      DB.deleteAssignment(id); render();
+      App.showToast('Assignment deleted.','info');
+    });
+  }
+</script>
+</body>
+</html>

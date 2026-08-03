@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="page-title">Course Detail — Centre for Media Literacy</title>
+  <meta name="description" id="page-desc" content="Course details — Centre for Media Literacy">
+  <link rel="stylesheet" href="css/style.css">
+  <style>
+    .course-layout { display: grid; grid-template-columns: 1fr 360px; gap: 32px; align-items: start; padding: 40px 0 60px; }
+    .sticky-sidebar { position: sticky; top: calc(var(--nav-height) + 20px); }
+    .syllabus-item { display: flex; gap: 14px; padding: 16px; border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; transition: border-color var(--transition); }
+    .syllabus-item:hover { border-color: var(--accent); }
+    .syllabus-week { width: 40px; height: 40px; border-radius: var(--radius-sm); background: var(--primary); color: var(--accent-light); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0; }
+    .outcome-item { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; font-size: 14px; color: var(--text-body); border-bottom: 1px solid var(--bg-section); }
+    .outcome-item:last-child { border-bottom: none; }
+    .outcome-check { color: var(--green); font-weight: 700; flex-shrink: 0; margin-top: 2px; }
+    @media (max-width: 900px) { .course-layout { grid-template-columns: 1fr; } .sticky-sidebar { position: static; } }
+  </style>
+</head>
+<body>
+
+<!-- Header injected by layout.js -->
+
+<!-- COURSE HERO -->
+<div class="course-hero" id="course-hero">
+  <div class="container course-hero-content">
+    <div class="course-hero-breadcrumb">
+      <a href="index.html">Home</a> <span>/</span>
+      <a href="courses.html">Courses</a> <span>/</span>
+      <span id="bc-title">Loading…</span>
+    </div>
+    <div style="display:flex;align-items:flex-start;gap:20px;flex-wrap:wrap">
+      <div style="font-size:56px" id="course-emoji">🎓</div>
+      <div style="flex:1">
+        <div id="course-category-badge" style="margin-bottom:10px"></div>
+        <h1 id="course-title" style="color:white;margin-bottom:12px;font-size:clamp(1.6rem,3vw,2.4rem)">Loading…</h1>
+        <p id="course-short-desc" style="color:rgba(255,255,255,0.7);font-size:15px;max-width:640px;line-height:1.7"></p>
+        <div id="course-meta-row" class="flex gap-20 flex-wrap mt-16" style="font-size:13px;color:rgba(255,255,255,0.55)"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- COURSE BODY -->
+<div class="section-gray" style="padding:0 0 60px">
+  <div class="container">
+    <div class="course-layout">
+      <!-- Left: Details -->
+      <div>
+        <!-- Announcement Banner for Written Exam -->
+        <div style="background:linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);color:white;border-radius:12px;padding:20px;margin-bottom:24px;border:1px solid rgba(200,146,42,0.4)">
+          <div style="font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--accent-light);margin-bottom:6px">📢 Course Announcement</div>
+          <h4 style="color:white;font-size:16px;margin-bottom:6px;font-family:'Merriweather',serif">২০শে আগস্টের পর লিখিত পরীক্ষা অনুষ্ঠিত হবে</h4>
+          <p style="font-size:13px;color:rgba(255,255,255,0.8);margin:0">
+            সকল শিক্ষার্থীদের অবগতির জন্য জানানো যাচ্ছে যে, ২০শে আগস্টের মধ্যে সকল অ্যাসাইনমেন্ট (১১টি রি-ক্রিয়েশন ও ৪টি নিউজ কার্ড) জমা দিতে হবে। ২০শে আগস্টের পর লিখিত পরীক্ষা অনুষ্ঠিত হবে। সিলেবাস ক্লাসে জানানো হয়েছে।
+          </p>
+        </div>
+
+        <!-- About -->
+        <div class="card card-body mb-24 anim-up">
+          <h3 style="margin-bottom:16px">About This Course</h3>
+          <p id="course-full-desc" style="font-size:15px;line-height:1.8;color:var(--text-body)"></p>
+        </div>
+
+        <!-- Outcomes -->
+        <div class="card card-body mb-24 anim-up d1">
+          <h3 style="margin-bottom:16px">What You'll Learn</h3>
+          <div id="outcomes-list"></div>
+        </div>
+
+        <!-- Syllabus -->
+        <div class="card card-body mb-24 anim-up d2">
+          <h3 style="margin-bottom:16px">Course Syllabus</h3>
+          <div id="syllabus-list"></div>
+        </div>
+
+        <!-- Enrolled Students (admin view) -->
+        <div class="card card-body anim-up d3" id="enrolled-section" style="display:none">
+          <div class="flex-between mb-16">
+            <h3>Enrolled Students</h3>
+            <span class="badge badge-primary" id="enrolled-count">0</span>
+          </div>
+          <div id="enrolled-list"></div>
+        </div>
+      </div>
+
+      <!-- Right: Enroll sidebar -->
+      <div class="sticky-sidebar">
+        <div class="course-sidebar-card anim-up">
+          <div class="flex items-center gap-12 mb-18">
+            <div style="font-size:36px" id="side-emoji">🎓</div>
+            <div>
+              <div id="side-type-badge"></div>
+              <div id="side-status-badge" style="margin-top:4px"></div>
+            </div>
+          </div>
+
+          <!-- Deadline countdown -->
+          <div class="enroll-deadline-bar" id="deadline-bar">
+            ⏳ Enrolment deadline: <strong id="deadline-text">Loading…</strong>
+          </div>
+
+          <div class="countdown-box" id="countdown-box" style="display:none">
+            <div class="countdown-unit"><div class="countdown-num" id="cd-days">0</div><div class="countdown-label">Days</div></div>
+            <div class="countdown-unit"><div class="countdown-num" id="cd-hours">0</div><div class="countdown-label">Hours</div></div>
+            <div class="countdown-unit"><div class="countdown-num" id="cd-mins">0</div><div class="countdown-label">Mins</div></div>
+          </div>
+
+          <!-- CTA -->
+          <div id="enroll-cta" style="margin-top:16px"><!-- injected by JS --></div>
+
+          <!-- Course details list -->
+          <div style="margin-top:24px;display:grid;gap:10px" id="side-details"></div>
+        </div>
+
+        <!-- Instructor card -->
+        <div class="course-sidebar-card mt-16 anim-up d1">
+          <h4 style="margin-bottom:14px">Offered By</h4>
+          <div class="course-instructor gap-12">
+            <div class="org-avatar admin" style="width:46px;height:46px;font-size:14px">CML</div>
+            <div>
+              <div class="course-inst-name">Centre for Media Literacy</div>
+              <div class="course-inst-title">Media Education Organisation</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ENROLL MODAL (for login prompt) -->
+<div class="modal-overlay" id="enroll-login-modal">
+  <div class="modal" style="max-width:440px;text-align:center">
+    <button class="modal-close" onclick="App.closeModal('enroll-login-modal')">✕</button>
+    <div style="font-size:48px;margin-bottom:16px">🔐</div>
+    <h3 class="modal-title" style="text-align:center">Sign In to Enrol</h3>
+    <p style="color:var(--text-muted);margin-bottom:24px;font-size:14px">You need a CML membership to enrol in courses. It's completely free!</p>
+    <div class="flex flex-col gap-10">
+      <a href="login.html" class="btn btn-primary btn-full">Sign In to My Account</a>
+      <a href="signup.html" class="btn btn-outline btn-full">Create Free Account</a>
+    </div>
+  </div>
+</div>
+
+<!-- Footer injected by layout.js -->
+
+<div id="toast-container" class="toast-container"></div>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+<script src="js/layout.js"></script>
+<script>
+  let currentUser, course;
+
+  document.addEventListener('DOMContentLoaded', () => {
+    Layout.initPublic('courses');
+
+    const params = new URLSearchParams(window.location.search);
+    const id     = params.get('id') || params.get('slug');
+
+    course = id ? (DB.getCourseById(id) || DB.getCourseBySlug(id)) : DB.getCourses()[0];
+
+    if (!course) {
+      document.body.innerHTML = `<div style="text-align:center;padding:100px 20px"><h2>Course not found</h2><a href="courses.html">← Back to courses</a></div>`;
+      return;
+    }
+
+    currentUser = DB.getCurrentUser();
+    if (currentUser) currentUser = DB.getUserById(currentUser.id);
+
+    renderCoursePage(course);
+    startCountdown(course.enrollDeadline);
+  });
+
+  function renderCoursePage(c) {
+    document.getElementById('page-title').textContent = `${c.title} — CML`;
+    document.getElementById('page-desc').content = c.description;
+    document.getElementById('bc-title').textContent = c.title;
+    document.getElementById('course-title').textContent = c.title;
+    document.getElementById('course-short-desc').textContent = c.description.slice(0,200) + '…';
+    document.getElementById('course-emoji').textContent = c.emoji || '🎓';
+    document.getElementById('side-emoji').textContent  = c.emoji || '🎓';
+    document.getElementById('course-full-desc').textContent = c.description;
+
+    document.getElementById('course-category-badge').innerHTML = `<span class="badge badge-accent">${c.category}</span>`;
+
+    document.getElementById('course-meta-row').innerHTML = `
+      <span>📅 Started: ${App.formatDate(c.startDate)}</span>
+      <span>⏱ ${c.duration}</span>
+      <span>📊 ${c.level}</span>
+      <span>🌐 ${c.language}</span>
+      <span>👥 ${DB.getEnrollmentsByCourse(c.id).length} enrolled</span>
+    `;
+
+    // Outcomes
+    document.getElementById('outcomes-list').innerHTML = (c.outcomes || []).map(o =>
+      `<div class="outcome-item"><span class="outcome-check">✓</span><span>${o}</span></div>`
+    ).join('') || '<p style="color:var(--text-muted)">To be announced.</p>';
+
+    // Syllabus
+    document.getElementById('syllabus-list').innerHTML = (c.syllabus || []).map(w => `
+      <div class="syllabus-item">
+        <div class="syllabus-week">W${w.week}</div>
+        <div>
+          <div style="font-weight:700;font-size:14px;color:var(--text-dark);margin-bottom:6px">${w.title}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">
+            ${(w.topics||[]).map(t => `<span class="badge badge-primary">${t}</span>`).join('')}
+          </div>
+        </div>
+      </div>
+    `).join('') || '<p style="color:var(--text-muted)">Syllabus to be announced.</p>';
+
+    // Sidebar details
+    const days = App.daysLeft(c.enrollDeadline);
+    document.getElementById('side-type-badge').innerHTML = `<span class="badge ${c.type==='offline'?'badge-primary':'badge-admin'}">${c.type==='offline'?'📍 Offline':'💻 Online'}</span>`;
+    document.getElementById('side-status-badge').innerHTML = days > 0 ? `<span class="badge badge-open">🟢 Enrolment Open</span>` : `<span class="badge badge-closed">Enrolment Closed</span>`;
+
+    document.getElementById('deadline-text').textContent = App.formatDate(c.enrollDeadline);
+
+    document.getElementById('side-details').innerHTML = `
+      <div style="display:flex;justify-content:space-between;font-size:13px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span style="color:var(--text-muted)">Start Date</span><span style="font-weight:600">${App.formatDate(c.startDate)}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span style="color:var(--text-muted)">Duration</span><span style="font-weight:600">${c.duration}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span style="color:var(--text-muted)">Format</span><span style="font-weight:600">${c.format || c.type}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span style="color:var(--text-muted)">Level</span><span style="font-weight:600">${c.level}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span style="color:var(--text-muted)">Language</span><span style="font-weight:600">${c.language}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;padding:8px 0">
+        <span style="color:var(--text-muted)">Fee</span><span style="font-weight:700;color:var(--green)">${c.fee}</span>
+      </div>
+    `;
+
+    renderEnrollCTA(c, days);
+    renderEnrolledStudents(c);
+  }
+
+  function renderEnrollCTA(c, days) {
+    const ctaDiv = document.getElementById('enroll-cta');
+    const isOpen = days !== null && days > 0;
+
+    if (!currentUser) {
+      ctaDiv.innerHTML = isOpen
+        ? `<button class="btn btn-primary btn-xl btn-full" onclick="App.openModal('enroll-login-modal')">Enrol Now — Free</button>
+           <p style="text-align:center;font-size:12px;color:var(--text-muted);margin-top:8px">CML membership required</p>`
+        : `<div class="btn btn-ghost btn-xl btn-full" style="cursor:default;pointer-events:none;color:var(--text-muted)">Enrolment Closed</div>`;
+      return;
+    }
+
+    const enrolled = DB.isEnrolled(currentUser.id, c.id);
+
+    if (enrolled) {
+      ctaDiv.innerHTML = `
+        <div style="text-align:center;padding:16px;background:rgba(26,122,74,0.08);border:1px solid rgba(26,122,74,0.2);border-radius:10px;margin-bottom:12px">
+          <div style="font-size:24px;margin-bottom:4px">✅</div>
+          <div style="font-weight:700;color:var(--green)">You are enrolled!</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px">Good luck with the course</div>
+        </div>
+        <a href="canva-assignment.html" class="btn btn-dark btn-full">Go to Canva Assignments →</a>
+        <button class="btn btn-ghost btn-sm btn-full mt-8" onclick="unenroll()">Withdraw from course</button>
+      `;
+    } else if (!isOpen) {
+      ctaDiv.innerHTML = `<div class="btn btn-ghost btn-xl btn-full" style="cursor:default;pointer-events:none;color:var(--text-muted)">Enrolment Closed</div>`;
+    } else {
+      ctaDiv.innerHTML = `
+        <button class="btn btn-primary btn-xl btn-full" onclick="enroll()">Enrol Now — Free</button>
+        <p style="text-align:center;font-size:12px;color:var(--text-muted);margin-top:8px">You are signed in as <strong>${currentUser.name}</strong></p>
+      `;
+    }
+  }
+
+  function enroll() {
+    if (!currentUser) { App.openModal('enroll-login-modal'); return; }
+    const days = App.daysLeft(course.enrollDeadline);
+    if (!days || days <= 0) { App.showToast('Enrolment deadline has passed.', 'error'); return; }
+    DB.enroll(currentUser.id, course.id);
+    App.showToast('🎉 You are now enrolled in this course!', 'success');
+    course = DB.getCourseById(course.id);
+    renderEnrollCTA(course, days);
+    renderEnrolledStudents(course);
+  }
+
+  function unenroll() {
+    App.confirm('Are you sure you want to withdraw from this course?', () => {
+      DB.unenroll(currentUser.id, course.id);
+      App.showToast('You have withdrawn from the course.', 'info');
+      course = DB.getCourseById(course.id);
+      renderEnrollCTA(course, App.daysLeft(course.enrollDeadline));
+    });
+  }
+
+  function renderEnrolledStudents(c) {
+    if (!currentUser || !Auth.hasPermission(currentUser, 'manage_courses')) return;
+    const section = document.getElementById('enrolled-section');
+    section.style.display = 'block';
+    const enrolls = DB.getEnrollmentsByCourse(c.id);
+    document.getElementById('enrolled-count').textContent = enrolls.length;
+    const list = document.getElementById('enrolled-list');
+    if (!enrolls.length) {
+      list.innerHTML = `<div class="empty-state" style="padding:20px"><div class="empty-icon">👥</div><div class="empty-title">No students enrolled yet</div></div>`;
+      return;
+    }
+    list.innerHTML = enrolls.map(e => {
+      const u = DB.getUserById(e.userId);
+      if (!u) return '';
+      return `
+        <div class="flex items-center gap-12" style="padding:12px 0;border-bottom:1px solid var(--border)">
+          ${App.avatarHtml(u,'sm')}
+          <div style="flex:1">
+            <div style="font-weight:600;font-size:14px">${u.name}</div>
+            <div style="font-size:12px;color:var(--text-muted)">${u.id} · Enrolled ${App.timeAgo(e.enrolledAt)}</div>
+          </div>
+          ${App.getRoleBadge(u.role)}
+        </div>`;
+    }).join('');
+  }
+
+  function startCountdown(deadline) {
+    if (!deadline) return;
+    const box = document.getElementById('countdown-box');
+    const end  = new Date(deadline + 'T23:59:59').getTime();
+    if (Date.now() > end) return;
+    box.style.display = 'flex';
+
+    function update() {
+      const diff = end - Date.now();
+      if (diff <= 0) { box.style.display = 'none'; return; }
+      document.getElementById('cd-days').textContent  = Math.floor(diff/86400000);
+      document.getElementById('cd-hours').textContent = Math.floor((diff%86400000)/3600000);
+      document.getElementById('cd-mins').textContent  = Math.floor((diff%3600000)/60000);
+    }
+    update();
+    setInterval(update, 60000);
+  }
+</script>
+</body>
+</html>

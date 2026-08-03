@@ -1,5 +1,5 @@
 // ============================================================
-// data.js v14 — Robust GitHub API Live Cloud Database & Sync
+// data.js v15 — Uncached Real-Time Cloud Sync Engine
 // Centre for Media Literacy Portal
 // ============================================================
 
@@ -16,7 +16,9 @@ const DB = {
     CURRENT_USER: 'cml_current_user'
   },
 
+  // Live GitHub REST API & Token
   GITHUB_USERS_API: 'https://api.github.com/repos/cmlbd/portal/contents/users.json',
+  RAW_USERS_URL:    'https://raw.githubusercontent.com/cmlbd/portal/main/users.json',
   _t: 'Z2hwX3kzYjMzMm5kRGhJeURZM3RZRGJTMUY0T3F5cFJSM3VCQkhk',
 
   getToken() {
@@ -151,6 +153,9 @@ const DB = {
   },
 
   async fetchCloudUsers() {
+    let cloudUsers = null;
+
+    // Method 1: Try GitHub REST API
     try {
       const token = this.getToken();
       const headers = { 'Accept': 'application/vnd.github.v3+json' };
@@ -164,34 +169,46 @@ const DB = {
           const jsonStr  = decodeURIComponent(Array.prototype.map.call(atob(cleanB64), function(c) {
             return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
           }).join(''));
-
-          const cloudUsers = JSON.parse(jsonStr);
-          if (Array.isArray(cloudUsers)) {
-            const localUsers = this.getUsers();
-            let changed = false;
-
-            cloudUsers.forEach(cu => {
-              if (!cu) return;
-              const idx = localUsers.findIndex(lu => lu.id === cu.id || (lu.email && lu.email.toLowerCase() === cu.email?.toLowerCase()));
-              if (idx < 0) {
-                localUsers.push(cu);
-                changed = true;
-              } else {
-                if (localUsers[idx].password !== cu.password) {
-                  localUsers[idx] = { ...localUsers[idx], ...cu };
-                  changed = true;
-                }
-              }
-            });
-
-            if (changed) {
-              localStorage.setItem(this.KEYS.USERS, JSON.stringify(localUsers));
-            }
-          }
+          cloudUsers = JSON.parse(jsonStr);
         }
       }
     } catch (e) {
-      console.error('Fetch cloud users error:', e);
+      console.log('GitHub API fetch fallback');
+    }
+
+    // Method 2: Fallback to Raw GitHub URL
+    if (!cloudUsers) {
+      try {
+        const rawRes = await fetch(this.RAW_USERS_URL + '?nocache=' + Date.now());
+        if (rawRes.ok) {
+          cloudUsers = await rawRes.json();
+        }
+      } catch(e) {
+        console.log('Raw fetch fallback');
+      }
+    }
+
+    if (Array.isArray(cloudUsers)) {
+      const localUsers = this.getUsers();
+      let changed = false;
+
+      cloudUsers.forEach(cu => {
+        if (!cu) return;
+        const idx = localUsers.findIndex(lu => lu.id === cu.id || (lu.email && lu.email.toLowerCase() === cu.email?.toLowerCase()));
+        if (idx < 0) {
+          localUsers.push(cu);
+          changed = true;
+        } else {
+          if (localUsers[idx].password !== cu.password) {
+            localUsers[idx] = { ...localUsers[idx], ...cu };
+            changed = true;
+          }
+        }
+      });
+
+      if (changed) {
+        localStorage.setItem(this.KEYS.USERS, JSON.stringify(localUsers));
+      }
     }
   },
 
@@ -215,7 +232,7 @@ const DB = {
       const token = this.getToken();
       if (!token) return false;
 
-      const getRes = await fetch(this.GITHUB_USERS_API + '?t=' + Date.now(), {
+      const getRes = await fetch(this.GITHUB_USERS_API + '?nocache=' + Date.now(), {
         headers: {
           'Authorization': 'token ' + token,
           'Accept': 'application/vnd.github.v3+json'
@@ -254,7 +271,7 @@ const DB = {
           'Accept': 'application/vnd.github.v3+json'
         },
         body: JSON.stringify({
-          message: `Live register user: ${usersList[usersList.length-1]?.name || 'user'}`,
+          message: `Cloud register user: ${usersList[usersList.length-1]?.name || 'user'}`,
           content: contentB64,
           sha: sha || undefined
         })
@@ -289,6 +306,7 @@ const DB = {
   async login(identifier, password) {
     if (!identifier || !password) return null;
 
+    // Always fetch latest cloud users before checking login
     await this.fetchCloudUsers();
 
     const cleanInput = identifier.trim().toLowerCase();

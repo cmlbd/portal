@@ -5,11 +5,7 @@
     "role": "director",
     "name": "Director General",
     "email": "director@cml.org",
-    "phone": "+8801700000001",
-    "bio": "Director General of Centre for Media Literacy.",
-    "designation": "Director General",
-    "department": "Management",
-    "joinDate": "2024-01-01"
+    "phone": "+8801700000001"
   },
   {
     "id": "CML-ADM-001",
@@ -17,11 +13,7 @@
     "role": "admin",
     "name": "Executive Administrator",
     "email": "admin@cml.org",
-    "phone": "+8801700000002",
-    "bio": "Administrator of CML Portal.",
-    "designation": "System Admin",
-    "department": "Administration",
-    "joinDate": "2024-01-05"
+    "phone": "+8801700000002"
   },
   {
     "id": "CML-ADV-001",
@@ -29,11 +21,7 @@
     "role": "advisor",
     "name": "Media Advisor",
     "email": "advisor@cml.org",
-    "phone": "+8801700000003",
-    "bio": "Senior Media Advisory Board Member.",
-    "designation": "Senior Advisor",
-    "department": "Advisory",
-    "joinDate": "2024-01-10"
+    "phone": "+8801700000003"
   },
   {
     "id": "CML-MBR-001",
@@ -41,10 +29,6 @@
     "role": "member",
     "name": "General Member",
     "email": "member@cml.org",
-    "phone": "+8801700000004",
-    "bio": "Active member of Centre for Media Literacy.",
-    "designation": "Media Activist",
-    "department": "General Member",
-    "joinDate": "2024-02-01"
+    "phone": "+8801700000004"
   }
 ]
